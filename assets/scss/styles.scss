@@ -3,6 +3,7 @@ $fa-font-path: "../external/Font-Awesome/fonts";
 @import "../external/Font-Awesome/scss/font-awesome";
 
 $buffer-size: 2rem;
+$buffer-size-sm: $buffer-size / 2;
 
 body {
     margin-top: $buffer-size;
@@ -27,6 +28,31 @@ body {
 #user-information,
 #user-not-found {
     display: none;
+}
+
+#username {
+    border: none;
+    border-bottom: solid $body-color 3px;
+    border-radius: 0;
+    font-size: 2rem;
+    text-align: center;
+}
+
+.statistics {
+    > div {
+        padding: 10px;
+        margin-bottom: $buffer-size-sm;
+    }
+    p {
+        margin-bottom: 5px;
+    }
+    p.value {
+        font-size: $font-size-h1;
+        margin-bottom: 0;
+    }
+    p#user-since {
+        font-size: $font-size-base;
+    }
 }
 .value-bad {
     color: red;
@@ -55,10 +81,10 @@ body {
 }
 
 $avatar-size: 150px;
-$avatar-border-size: 10px;
+$avatar-border-size: 5px;
 
 #avatar-container {
-    //position: relative;
+    position: relative;
 }
 
 #avatar {

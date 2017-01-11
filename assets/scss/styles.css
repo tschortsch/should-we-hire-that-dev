@@ -8987,6 +8987,24 @@ body {
 #user-not-found {
   display: none; }
 
+#username {
+  border: none;
+  border-bottom: solid #292b2c 3px;
+  border-radius: 0;
+  font-size: 2rem;
+  text-align: center; }
+
+.statistics > div {
+  padding: 10px;
+  margin-bottom: 1rem; }
+.statistics p {
+  margin-bottom: 5px; }
+.statistics p.value {
+  font-size: 2.5rem;
+  margin-bottom: 0; }
+.statistics p#user-since {
+  font-size: 1rem; }
+
 .value-bad {
   color: red; }
 
@@ -9022,9 +9040,12 @@ body {
     color: #8000ff; }
   100% {
     color: #ff0080; } }
+#avatar-container {
+  position: relative; }
+
 #avatar {
   position: absolute;
-  top: 10px;
+  top: 5px;
   left: 50%;
   transform: translateX(-50%); }
 
@@ -9035,14 +9056,13 @@ body {
 
 #loading-container {
   display: inline-block;
-  width: 170px;
-  height: 170px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  border: 10px solid transparent; }
-
-#loading-container.loading {
-  border: 10px solid rgba(105, 105, 105, 0.2);
-  border-top-color: #a7a7a7;
-  animation: spin 1s infinite linear; }
+  border: 5px solid transparent; }
+  #loading-container.loading {
+    border: 5px solid rgba(105, 105, 105, 0.2);
+    border-top-color: #a7a7a7;
+    animation: spin 1s infinite linear; }
 
 /*# sourceMappingURL=styles.css.map */

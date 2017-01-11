@@ -16,40 +16,58 @@
             </form>
         </div>
         <div class="col-12 text-center">
-            <h1 class="display-1 buffer-bottom">Should we hire that dev?</h1>
+            <h1 class="display-4">Should we hire that dev?</h1>
 
             <div id="github-auth-container">
                 <button id="github-auth" class="btn btn-primary">Authorize with GitHub</button>
             </div>
+        </div>
 
-            <form id="inspectform">
+        <div class="offset-md-3 col-md-6 text-center">
+            <form id="inspectform" class="buffer-bottom">
                 <div class="form-group">
                     <label for="username" class="sr-only">Please enter GitHub username:</label>
-                    <input type="text" name="username" id="username" class="form-control form-control-lg" placeholder="Please enter GitHub username" />
+                    <input type="text" name="username" id="username" class="form-control" placeholder="Please enter GitHub username" />
                 </div>
             </form>
 
-            <div id="user-not-found">User not found!</div>
-        </div>
-
-        <div class="col-12 text-center">
+            <div id="user-not-found" class="text-danger">User not found!</div>
             <div id="user-information">
-                <div id="avatar-container">
+                <div id="avatar-container" class="buffer-bottom">
                     <div id="loading-container"></div>
                     <div id="avatar"></div>
-                    <div id="name"></div>
+                    <h2 id="name">-</h2>
                 </div>
 
-                <div>User since: <span id="user-since" class="value"></span></div>
-                <div>Followers: <span id="followers" class="value"></span></div>
-                <div>Total commits: <span id="commits" class="value"></span></div>
-                <div>Public repos: <span id="repos" class="value"></span></div>
-                <div>Stars: <span id="stars" class="value"></span></div>
+                <div class="row statistics">
+                    <div class="col-md-6">
+                        <p>User since</p>
+                        <p id="user-since-from-now" class="value">-</p>
+                        <p id="user-since" class="value">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p>Followers</p>
+                        <p id="followers" class="value">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p>Total commits</p>
+                        <p id="commits" class="value">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p>Public repos</p>
+                        <p id="repos" class="value">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p>Stars</p>
+                        <p id="stars" class="value">-</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<script src="assets/external/moment/min/moment-with-locales.min.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

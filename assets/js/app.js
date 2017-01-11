@@ -19,6 +19,7 @@ const commits = document.querySelector('#commits');
 const userNotFound = document.querySelector('#user-not-found');
 const followers = document.querySelector('#followers');
 const userSince = document.querySelector('#user-since');
+const userSinceFromNow = document.querySelector('#user-since-from-now');
 const repos = document.querySelector('#repos');
 const stars = document.querySelector('#stars');
 const avatar = document.querySelector('#avatar');
@@ -30,7 +31,7 @@ inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuth.addEventListener('click', githubAuthSubmitHandler);
 githubLogout.addEventListener('submit', githubLogoutSubmitHandler);
 
-const statisticsContainers = [commits, followers, userSince, repos, stars];
+const statisticsContainers = [commits, followers, userSince, userSinceFromNow, repos, stars];
 
 const judgementLimits = {
     commits: {
@@ -68,11 +69,12 @@ function inspectFormSubmitHandler(e) {
     e.preventDefault();
     loadingContainer.classList.add('loading');
     statisticsContainers.forEach((container) => {
-        container.innerText = '';
+        container.innerText = '-';
     });
     avatar.innerHTML = '';
-    const username = usernameInput.value;
+    name.innerHTML = '-';
 
+    const username = usernameInput.value;
     let userCheckPromise = checkIfUserExists(username);
 
     userCheckPromise.then((responseRaw) => {
@@ -89,7 +91,9 @@ function inspectFormSubmitHandler(e) {
             fillValue(name, userResponse.name);
             fillValue(followers, userResponse.followers);
             const createdAt = new Date(userResponse.created_at);
-            fillValue(userSince, createdAt.toLocaleString());
+            const createdAtMoment = moment(createdAt);
+            fillValue(userSince, createdAtMoment.format('(DD.MM.YYYY)'));
+            fillValue(userSinceFromNow, createdAtMoment.fromNow());
             fillValue(repos, userResponse.public_repos);
 
             let avatarImg = document.createElement('img');
