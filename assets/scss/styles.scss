@@ -1,9 +1,15 @@
-* {
-    box-sizing: border-box;
-}
+@import "../external/bootstrap/scss/bootstrap";
+$fa-font-path: "../external/Font-Awesome/fonts";
+@import "../external/Font-Awesome/scss/font-awesome";
+
+$buffer-size: 2rem;
+
 body {
-    margin: 0;
-    padding: 0;
+    margin-top: $buffer-size;
+    margin-bottom: $buffer-size;
+}
+.buffer-bottom {
+    margin-bottom: $buffer-size;
 }
 @keyframes spin {
     0% {
@@ -13,13 +19,6 @@ body {
         transform: rotate(360deg);
     }
 }
-.container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
 #github-auth {
     display: block;
 }
@@ -28,19 +27,6 @@ body {
 #user-information,
 #user-not-found {
     display: none;
-}
-.loading {
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    border: .25rem solid rgba(105, 105, 105, 0.2);
-    border-top-color: #a7a7a7;
-    animation: spin 1s infinite linear;
-}
-.value {
-    width: 25px;
-    height: 25px;
-    display: inline-block;
 }
 .value-bad {
     color: red;
@@ -66,4 +52,37 @@ body {
     80% {color: #0000ff;}
     90% {color: #8000ff;}
     100% {color: #ff0080;}
+}
+
+$avatar-size: 150px;
+$avatar-border-size: 10px;
+
+#avatar-container {
+    //position: relative;
+}
+
+#avatar {
+    position: absolute;
+    top: $avatar-border-size;
+    left: 50%;
+    transform: translateX(-50%);
+}
+#avatar img {
+    width: $avatar-size;
+    height: $avatar-size;
+    border-radius: 50%;
+}
+
+#loading-container {
+    display: inline-block;
+    width: $avatar-size + 2 * $avatar-border-size;
+    height: $avatar-size + 2 * $avatar-border-size;
+    border-radius: 50%;
+    border: $avatar-border-size solid transparent;
+
+    &.loading {
+        border: $avatar-border-size solid rgba(105, 105, 105, 0.2);
+        border-top-color: #a7a7a7;
+        animation: spin 1s infinite linear;
+    }
 }

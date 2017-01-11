@@ -9,28 +9,44 @@
 <body>
 
 <div class="container">
-    <h1>Should we hire that dev?</h1>
+    <div class="row">
+        <div class="col-12 text-right">
+            <form id="github-logout">
+                <button class="btn btn-secondary btn-sm">Logout from GitHub <i class="fa fa-sign-out" aria-hidden="true"></i></button>
+            </form>
+        </div>
+        <div class="col-12 text-center">
+            <h1 class="display-1 buffer-bottom">Should we hire that dev?</h1>
 
-    <button id="github-auth">Authorize with GitHub</button>
-    <form id="github-logout">
-        <input type="submit" value="Logout from GitHub" />
-    </form>
+            <div id="github-auth-container">
+                <button id="github-auth" class="btn btn-primary">Authorize with GitHub</button>
+            </div>
 
-    <form id="inspectform">
-        <label for="username">Please enter GitHub username:</label>
-        <input type="text" name="username" id="username" />
-    </form>
+            <form id="inspectform">
+                <div class="form-group">
+                    <label for="username" class="sr-only">Please enter GitHub username:</label>
+                    <input type="text" name="username" id="username" class="form-control form-control-lg" placeholder="Please enter GitHub username" />
+                </div>
+            </form>
 
-    <div id="user-not-found">User not found!</div>
+            <div id="user-not-found">User not found!</div>
+        </div>
 
-    <div id="user-information">
-        <div id="avatar"></div>
+        <div class="col-12 text-center">
+            <div id="user-information">
+                <div id="avatar-container">
+                    <div id="loading-container"></div>
+                    <div id="avatar"></div>
+                    <div id="name"></div>
+                </div>
 
-        <div>User since: <span id="user-since" class="value"></span></div>
-        <div>Followers: <span id="followers" class="value"></span></div>
-        <div>Total commits: <span id="commits" class="value"></span></div>
-        <div>Public repos: <span id="repos" class="value"></span></div>
-        <div>Stars: <span id="stars" class="value"></span></div>
+                <div>User since: <span id="user-since" class="value"></span></div>
+                <div>Followers: <span id="followers" class="value"></span></div>
+                <div>Total commits: <span id="commits" class="value"></span></div>
+                <div>Public repos: <span id="repos" class="value"></span></div>
+                <div>Stars: <span id="stars" class="value"></span></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -52,6 +68,7 @@
         inspectForm.style.display = 'block';
     }
 
+    const loadingContainer = document.querySelector('#loading-container');
     const usernameInput = document.querySelector('#username');
     const commits = document.querySelector('#commits');
     const userNotFound = document.querySelector('#user-not-found');
@@ -60,6 +77,7 @@
     const repos = document.querySelector('#repos');
     const stars = document.querySelector('#stars');
     const avatar = document.querySelector('#avatar');
+    const name = document.querySelector('#name');
 
     const commitApiHeaders = new Headers();
     commitApiHeaders.append('Accept', 'application/vnd.github.cloak-preview');
@@ -103,9 +121,9 @@
 
     function inspectFormSubmitHandler(e) {
         e.preventDefault();
+        loadingContainer.classList.add('loading');
         statisticsContainers.forEach((container) => {
             container.innerText = '';
-            toggleLoading(container)
         });
         avatar.innerHTML = '';
         const username = usernameInput.value;
@@ -116,7 +134,6 @@
             if(!responseRaw.ok) {
                 userInformation.style.display = 'none';
                 userNotFound.style.display = 'block';
-                statisticsContainers.forEach((container) => toggleLoading(container));
                 return;
             } else {
                 userInformation.style.display = 'block';
@@ -124,6 +141,7 @@
             }
             responseRaw.json().then((userResponse) => {
                 console.log(userResponse);
+                fillValue(name, userResponse.name);
                 fillValue(followers, userResponse.followers);
                 const createdAt = new Date(userResponse.created_at);
                 fillValue(userSince, createdAt.toLocaleString());
@@ -133,12 +151,14 @@
                 avatarImg.src = userResponse.avatar_url;
                 avatar.append(avatarImg);
 
-                fetchCommits(username).then(commitsResponseRaw => {
+                let fetchCommitsPromise = fetchCommits(username);
+                fetchCommitsPromise.then(commitsResponseRaw => {
                     commitsResponseRaw.json().then((commitsResponse) => {
                         fillValue(commits, commitsResponse.total_count);
                     });
                 });
-                fetchRepos(username).then(reposResponseRaw => {
+                let fetchReposPromise = fetchRepos(username);
+                fetchReposPromise.then(reposResponseRaw => {
                     reposResponseRaw.json().then(reposResponse => {
                         let starsCount = 0;
                         reposResponse.forEach(repo => {
@@ -146,6 +166,10 @@
                         });
                         fillValue(stars, starsCount);
                     });
+                });
+
+                Promise.all([fetchCommitsPromise, fetchReposPromise]).then(values => {
+                    loadingContainer.classList.remove('loading');
                 });
             });
         });
@@ -163,7 +187,7 @@
     }
 
     function fillValue(container, value) {
-        container.classList.remove('loading', 'value-ultra', 'value-good', 'value-ok', 'value-bad');
+        container.classList.remove('value-ultra', 'value-good', 'value-ok', 'value-bad');
         const judgement = getJudgement(container.id, value);
         if(judgement) {
             container.classList.add(judgement);
@@ -188,10 +212,6 @@
     function checkIfUserExists(username) {
         const userQuery = 'https://api.github.com/users/' + username + '?access_token=' + accessToken;
         return fetch(userQuery);
-    }
-
-    function toggleLoading(container) {
-        container.classList.toggle('loading');
     }
 </script>
 </body>
