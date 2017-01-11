@@ -57,8 +57,7 @@ const judgementLimits = {
 };
 
 function githubAuthSubmitHandler(e) {
-    const redirectUri = encodeURI('http://localhost/~tschortsch/github-user-inspector/github-auth.html');
-    window.location.href = 'https://github.com/login/oauth/authorize?client_id=3a54502458a4cd3feabe&redirect_uri=' + redirectUri;
+    window.location.href = 'https://github.com/login/oauth/authorize?client_id=3a54502458a4cd3feabe';
     e.preventDefault();
 }
 function githubLogoutSubmitHandler(e) {
@@ -80,10 +79,10 @@ function inspectFormSubmitHandler(e) {
     userCheckPromise.then((responseRaw) => {
         if(!responseRaw.ok) {
             userInformation.style.display = 'none';
-            userNotFound.style.display = 'block';
+            userNotFound.style.display = 'inline-block';
             return;
         } else {
-            userInformation.style.display = 'block';
+            userInformation.style.display = 'inline-block';
             userNotFound.style.display = 'none';
         }
         responseRaw.json().then((userResponse) => {
