@@ -35,25 +35,30 @@ githubLogout.addEventListener('submit', githubLogoutSubmitHandler);
 const statisticsContainers = [commits, followers, userSince, userSinceFromNow, repos, stars];
 
 const judgementLimits = {
-    commits: {
+    'commits': {
         ok: 1000,
         good: 2000,
         ultra: 8000
     },
-    followers: {
+    'followers': {
         ok: 10,
         good: 50,
         ultra: 800
     },
-    repos: {
+    'repos': {
         ok: 10,
         good: 25,
         ultra: 80
     },
-    stars: {
+    'stars': {
         ok: 10,
         good: 50,
         ultra: 200
+    },
+    'user-since-from-now': {
+        ok: (365 * 24 * 60 * 60), // 1 year
+        good: 3 * (365 * 24 * 60 * 60), // 3 years
+        ultra: 6 * (365 * 24 * 60 * 60) // 6 years
     }
 };
 
@@ -93,8 +98,10 @@ function inspectFormSubmitHandler(e) {
             fillValue(followers, userResponse.followers);
             const createdAt = new Date(userResponse.created_at);
             const createdAtMoment = moment(createdAt);
+            const createdAtTimestamp = createdAtMoment.unix();
+            const currentTimestamp = moment().unix();
             fillValue(userSince, createdAtMoment.format('(DD.MM.YYYY)'));
-            fillValue(userSinceFromNow, createdAtMoment.fromNow());
+            fillValue(userSinceFromNow, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
             fillValue(repos, userResponse.public_repos);
 
             let avatarImg = document.createElement('img');
@@ -124,11 +131,31 @@ function inspectFormSubmitHandler(e) {
                             totalLanguages++;
                         }
                     });
-                    languages.forEach((count, language) => {
-                        let languageElement = document.createElement("P");
-                        let content = document.createTextNode(language + ': ' + getPercentage(count, totalLanguages) + '%');
-                        languageElement.appendChild(content);
-                        languagesContainer.appendChild(languageElement);
+                    const languagesSorted = new Map([...languages.entries()].sort((a, b) => {
+                        if(a[1] < b[1]) {
+                            return 1;
+                        }
+                        if(a[1] > b[1]) {
+                            return -1;
+                        }
+                        return 0;
+                    }));
+                    languagesSorted.forEach((count, language) => {
+                        let languageElementProgress = document.createElement("DIV");
+                        const languagePercentage = getPercentage(count, totalLanguages);
+                        languageElementProgress.innerHTML =
+                            '<div class="language-statistics">' +
+                                '<div>' + language + '</div>' +
+                                '<div class="progress">' +
+                                    '<div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100"></div>' +
+                                '</div>' +
+                            '</div>';
+
+                        languagesContainer.appendChild(languageElementProgress);
+                        const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
+                        setTimeout(() => {
+                            progressBar.style.width = languagePercentage + '%';
+                        }, 1000);
                     });
                     fillValue(stars, starsCount);
                 });
@@ -156,13 +183,21 @@ function fetchRepos(username) {
     return fetch(reposQueryUrl);
 }
 
-function fillValue(container, value) {
+function fillValue(container, value, judgementValue) {
+    if(typeof judgementValue === 'undefined') {
+        judgementValue = value;
+    }
     container.classList.remove('value-ultra', 'value-good', 'value-ok', 'value-bad');
-    const judgement = getJudgement(container.id, value);
+    const judgement = getJudgement(container.id, judgementValue);
     if(judgement) {
         container.classList.add(judgement);
     }
-    container.innerText = value;
+    if(Number.isInteger(value)) {
+        let valueAnimation = new CountUp(container, 0, value);
+        valueAnimation.start();
+    } else {
+        container.innerText = value;
+    }
 }
 
 function getJudgement(type, value) {

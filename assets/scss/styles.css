@@ -9065,4 +9065,11 @@ body {
     border-top-color: #a7a7a7;
     animation: spin 1s infinite linear; }
 
+.language-statistics {
+  margin-bottom: 10px; }
+
+.progress-bar {
+  width: 0;
+  transition: width 2s ease-out; }
+
 /*# sourceMappingURL=styles.css.map */
