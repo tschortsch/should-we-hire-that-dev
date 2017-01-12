@@ -24,6 +24,7 @@ const repos = document.querySelector('#repos');
 const stars = document.querySelector('#stars');
 const avatar = document.querySelector('#avatar');
 const name = document.querySelector('#name');
+const languagesContainer = document.querySelector('#languages');
 
 const commitApiHeaders = new Headers();
 commitApiHeaders.append('Accept', 'application/vnd.github.cloak-preview');
@@ -71,6 +72,7 @@ function inspectFormSubmitHandler(e) {
         container.innerText = '-';
     });
     avatar.innerHTML = '';
+    languagesContainer.innerHTML = '';
     name.innerHTML = '-';
 
     const username = usernameInput.value;
@@ -109,8 +111,24 @@ function inspectFormSubmitHandler(e) {
             fetchReposPromise.then(reposResponseRaw => {
                 reposResponseRaw.json().then(reposResponse => {
                     let starsCount = 0;
+                    let languages = new Map();
+                    let totalLanguages = 0;
                     reposResponse.forEach(repo => {
                         starsCount += repo.stargazers_count;
+                        if(repo.language) {
+                            if(!languages.has(repo.language)) {
+                                languages.set(repo.language, 0);
+                            }
+                            let oldValue = languages.get(repo.language);
+                            languages.set(repo.language, ++oldValue);
+                            totalLanguages++;
+                        }
+                    });
+                    languages.forEach((count, language) => {
+                        let languageElement = document.createElement("P");
+                        let content = document.createTextNode(language + ': ' + getPercentage(count, totalLanguages) + '%');
+                        languageElement.appendChild(content);
+                        languagesContainer.appendChild(languageElement);
                     });
                     fillValue(stars, starsCount);
                 });
@@ -121,6 +139,10 @@ function inspectFormSubmitHandler(e) {
             });
         });
     });
+}
+
+function getPercentage(value, total) {
+    return Math.round(value *  100 / total);
 }
 
 function fetchCommits(username) {
