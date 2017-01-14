@@ -123,64 +123,55 @@ function inspectFormSubmitHandler(e) {
                     });
                     fillValue(stars, starsCount);
 
-                    let repoRequests = repos.filter((repo) => {
+                    let repoRequestPromises = repos.filter((repo) => {
                         return !repo.fork; // filter out forks
                     }).map((repo) => { // Do request for each repo
                         return new Promise((resolve) => {
                             fetchRepo(repo.languages_url, resolve);
                         });
                     });
-                    Promise.all(repoRequests).then((repoResponses) => {
-                        let repoJsonPromise = repoResponses.map((repoResponseRaw) => {
-                            return new Promise((resolve) => {
-                                repoResponseRaw.json().then((repoResponse) => {
-                                    resolve(repoResponse);
-                                });
-                            });
-                        });
-                        Promise.all(repoJsonPromise).then((repoResponses) => {
-                            let totalLanguages = 0;
-                            const languageStatistics = repoResponses.reduce((accumulator, repo) => {
-                                Object.keys(repo).forEach(language => {
-                                    let count = accumulator.get(language);
-                                    if(count) {
-                                        count += repo[language];
-                                    } else {
-                                        count = repo[language];
-                                    }
-                                    accumulator.set(language, count);
-                                    totalLanguages += repo[language];
-                                });
-                                return accumulator;
-                            }, new Map());
-
-                            const languagesSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
-                                if(a[1] < b[1]) {
-                                    return 1;
+                    Promise.all(repoRequestPromises).then((repoResponses) => {
+                        let totalLanguages = 0;
+                        const languageStatistics = repoResponses.reduce((accumulator, repo) => {
+                            Object.keys(repo).forEach(language => {
+                                let count = accumulator.get(language);
+                                if(count) {
+                                    count += repo[language];
+                                } else {
+                                    count = repo[language];
                                 }
-                                if(a[1] > b[1]) {
-                                    return -1;
-                                }
-                                return 0;
-                            }));
-
-                            languagesSorted.forEach((count, language) => {
-                                let languageElementProgress = document.createElement("DIV");
-                                const languagePercentage = getPercentage(count, totalLanguages);
-                                languageElementProgress.innerHTML =
-                                    '<div class="language-statistics">' +
-                                    '<div>' + language + '</div>' +
-                                    '<div class="progress">' +
-                                    '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' +  language + ' (' + languagePercentage + '%)</div>' +
-                                    '</div>' +
-                                    '</div>';
-
-                                languagesContainer.appendChild(languageElementProgress);
-                                const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
-                                setTimeout(() => {
-                                    progressBar.style.width = languagePercentage + '%';
-                                }, 1000);
+                                accumulator.set(language, count);
+                                totalLanguages += repo[language];
                             });
+                            return accumulator;
+                        }, new Map());
+
+                        const languagesSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
+                            if(a[1] < b[1]) {
+                                return 1;
+                            }
+                            if(a[1] > b[1]) {
+                                return -1;
+                            }
+                            return 0;
+                        }));
+
+                        languagesSorted.forEach((count, language) => {
+                            let languageElementProgress = document.createElement("DIV");
+                            const languagePercentage = getPercentage(count, totalLanguages);
+                            languageElementProgress.innerHTML =
+                                '<div class="language-statistics">' +
+                                '<div>' + language + '</div>' +
+                                '<div class="progress">' +
+                                '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' +  language + ' (' + languagePercentage + '%)</div>' +
+                                '</div>' +
+                                '</div>';
+
+                            languagesContainer.appendChild(languageElementProgress);
+                            const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
+                            setTimeout(() => {
+                                progressBar.style.width = languagePercentage + '%';
+                            }, 1000);
                         });
                     });
                 });
@@ -193,9 +184,11 @@ function inspectFormSubmitHandler(e) {
     });
 }
 
-function fetchRepo(repoUrl, cb) {
-    fetch(repoUrl + '?access_token=' + accessToken).then(repo => {
-        cb(repo);
+function fetchRepo(repoUrl, resolve) {
+    fetch(repoUrl + '?access_token=' + accessToken).then((repoResponseRaw) => {
+        repoResponseRaw.json().then((repo) => {
+            resolve(repo);
+        });
     });
 }
 
