@@ -1,6 +1,7 @@
 const accessToken = window.localStorage.getItem('swhtd-gh-access-token');
 
-const githubAuth = document.querySelector('#github-auth');
+const pageTitle = document.querySelector('#page-title');
+const githubAuthContainer = document.querySelector('#github-auth-container');
 const githubLogout = document.querySelector('#github-logout');
 const inspectForm = document.querySelector('#inspectform');
 const userInformation = document.querySelector('#user-information');
@@ -8,12 +9,14 @@ const userInformation = document.querySelector('#user-information');
 if(!accessToken) {
     console.log('please login first!');
 } else {
-    githubAuth.style.display = 'none';
+    pageTitle.style.display = 'none';
+    githubAuthContainer.style.display = 'none';
     githubLogout.style.display = 'block';
     inspectForm.style.display = 'block';
 }
 
 const loadingContainer = document.querySelector('#loading-container');
+const githubAuth = document.querySelector('#github-auth');
 const usernameInput = document.querySelector('#username');
 const commits = document.querySelector('#commits');
 const userNotFound = document.querySelector('#user-not-found');

@@ -30,12 +30,48 @@ body {
     display: none;
 }
 
-#username {
-    border: none;
-    border-bottom: solid $body-color 3px;
-    border-radius: 0;
-    font-size: 2rem;
-    text-align: center;
+h1 {
+    font-weight: normal;
+}
+h3 {
+    font-size: $font-size-h5;
+}
+
+.question {
+    font-size: $font-size-h1;
+
+    @include media-breakpoint-up(md) {
+        display: flex;
+    }
+
+    > .flex-item {
+        @include media-breakpoint-up(md) {
+            flex: 1;
+        }
+    }
+
+    .label {
+        margin-right: 0.7rem;
+
+        @include media-breakpoint-up(md) {
+            text-align: right;
+        }
+    }
+
+    .form-text {
+        font-size: $font-size-sm;
+    }
+
+    #username {
+        border: none;
+        border-bottom: solid $body-color 3px;
+        border-radius: 0;
+        font-size: $font-size-h1;
+        padding: 0;
+        line-height: $line-height-base;
+        color: $body-color;
+        width: 100%;
+    }
 }
 
 .statistics {

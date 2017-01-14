@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Should we hire that dev?</title>
 
-    <link rel="stylesheet" href="assets/scss/styles.css" />
+    <link rel="stylesheet" href="assets/css/styles.css" />
 </head>
 <body>
 
@@ -12,24 +12,35 @@
     <div class="row">
         <div class="col-12 text-right">
             <form id="github-logout">
-                <button class="btn btn-secondary btn-sm">Logout from GitHub <i class="fa fa-sign-out" aria-hidden="true"></i></button>
+                <button class="btn btn-link btn-sm">Logout from GitHub <i class="fa fa-sign-out" aria-hidden="true"></i></button>
             </form>
         </div>
         <div class="col-12 text-center">
-            <h1 class="display-4">Should we hire that dev?</h1>
-
-            <div id="github-auth-container">
-                <button id="github-auth" class="btn btn-primary">Authorize with GitHub</button>
-            </div>
+            <h1 id="page-title">Should we hire that dev?</h1>
         </div>
 
-        <div class="offset-md-3 col-md-6 text-center">
-            <form id="inspectform" class="buffer-bottom">
+        <div class="offset-xl-2 col-xl-8 offset-lg-1 col-lg-10">
+            <form id="inspectform" class="buffer-bottom form-inline">
                 <div class="form-group">
-                    <label for="username" class="sr-only">Please enter GitHub username:</label>
-                    <input type="text" name="username" id="username" class="form-control" placeholder="Please enter GitHub username" />
+                    <div class="question">
+                        <div class="label flex-item">Should we hire</div>
+                        <div class="username-input flex-item">
+                            <label for="username" class="sr-only">Please enter GitHub username:</label>
+                            <input type="text" name="username" id="username" class="form-control" placeholder="that dev?" />
+                            <p class="form-text text-muted">Enter GitHub <i class="fa fa-github" aria-hidden="true"></i> username</p>
+                        </div>
+                    </div>
                 </div>
             </form>
+        </div>
+        <div class="offset-lg-2 col-lg-8 text-center">
+            <div id="github-auth-container">
+                <p>
+                    Since the <a href="https://developer.github.com/v3/#rate-limiting">GitHub API rate limits</a> are pretty low for unauthorized requests you have to sign in with your GitHub account first.
+                    The Authorization only grants this website to request data which is already public anyway. So, no worries!
+                </p>
+                <button id="github-auth" class="btn btn-primary">Authorize with GitHub</button>
+            </div>
 
             <div id="user-not-found" class="text-danger">User not found!</div>
             <div id="user-information">
@@ -37,33 +48,33 @@
                     <div id="loading-container"></div>
                     <div id="avatar"></div>
                     <h2 id="name">-</h2>
-                    <p id="location">-</p>
+                    <p><i class="fa fa-map-marker" aria-hidden="true"></i> <span id="location">-</span></p>
                 </div>
 
                 <div class="row statistics">
                     <div class="col-md-6">
-                        <p>User since</p>
+                        <h3>User since</h3>
                         <p id="user-since-from-now" class="value">-</p>
                         <p id="user-since" class="value">-</p>
                     </div>
                     <div class="col-md-6">
-                        <p>Followers</p>
+                        <h3>Followers</h3>
                         <p id="followers" class="value">-</p>
                     </div>
                     <div class="col-md-6">
-                        <p>Total commits</p>
+                        <h3>Total commits</h3>
                         <p id="commits" class="value">-</p>
                     </div>
                     <div class="col-md-6">
-                        <p>Public repos</p>
+                        <h3>Public repos</h3>
                         <p id="repos" class="value">-</p>
                     </div>
                     <div class="col-md-6">
-                        <p>Stars</p>
+                        <h3>Stars</h3>
                         <p id="stars" class="value">-</p>
                     </div>
                     <div class="col-12">
-                        <p>Languages (based on last 100 commits / without forks)</p>
+                        <h3>Languages (based on last 100 commits / without forks)</h3>
                         <div id="languages"></div>
                     </div>
                 </div>
