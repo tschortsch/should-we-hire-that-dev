@@ -108,68 +108,73 @@ function inspectFormSubmitHandler(e) {
             avatarImg.src = userResponse.avatar_url;
             avatar.append(avatarImg);
 
-            let fetchCommitsPromise = fetchCommits(username);
-            fetchCommitsPromise.then(commitsResponseRaw => {
-                commitsResponseRaw.json().then((commitsResponse) => {
-                    let repoLanguagesPromises = commitsResponse.items.filter((commit) => {
-                        return !commit.repository.fork; // filter out forks
-                    }).map((commit) => { // Do request for each repo
-                        return new Promise((resolve) => {
-                            fetchRepo(commit.repository.languages_url, resolve);
-                        });
-                    });
-                    Promise.all(repoLanguagesPromises).then((repoResponses) => {
-                        let totalLanguages = 0;
-                        const languageStatistics = repoResponses.reduce((accumulator, repo) => {
-                            Object.keys(repo).forEach(language => {
-                                let count = accumulator.get(language);
-                                if(count) {
-                                    count += repo[language];
-                                } else {
-                                    count = repo[language];
-                                }
-                                accumulator.set(language, count);
-                                totalLanguages += repo[language];
+            let commitsStatisticsGatheredPromise = new Promise((resolve) => {
+                let fetchCommitsPromise = fetchCommits(username);
+                fetchCommitsPromise.then(commitsResponseRaw => {
+                    commitsResponseRaw.json().then((commitsResponse) => {
+                        fillValue(commits, commitsResponse.total_count);
+
+                        let repoLanguagesPromises = commitsResponse.items.filter((commit) => {
+                            return !commit.repository.fork; // filter out forks
+                        }).map((commit) => { // Do request for each repo
+                            return new Promise((resolve) => {
+                                fetchRepo(commit.repository.languages_url, resolve);
                             });
-                            return accumulator;
-                        }, new Map());
+                        });
+                        Promise.all(repoLanguagesPromises).then((repoResponses) => {
+                            let totalLanguages = 0;
+                            const languageStatistics = repoResponses.reduce((accumulator, repo) => {
+                                Object.keys(repo).forEach(language => {
+                                    let count = accumulator.get(language);
+                                    if(count) {
+                                        count += repo[language];
+                                    } else {
+                                        count = repo[language];
+                                    }
+                                    accumulator.set(language, count);
+                                    totalLanguages += repo[language];
+                                });
+                                return accumulator;
+                            }, new Map());
 
-                        const languageStatisticsSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
-                            if(a[1] < b[1]) {
-                                return 1;
-                            }
-                            if(a[1] > b[1]) {
-                                return -1;
-                            }
-                            return 0;
-                        }));
-                        console.log(languageStatisticsSorted);
-                        console.log(totalLanguages);
+                            const languageStatisticsSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
+                                if(a[1] < b[1]) {
+                                    return 1;
+                                }
+                                if(a[1] > b[1]) {
+                                    return -1;
+                                }
+                                return 0;
+                            }));
+                            console.log(languageStatisticsSorted);
+                            console.log(totalLanguages);
 
-                        languageStatisticsSorted.forEach((count, language) => {
-                            let languageElementProgress = document.createElement("DIV");
-                            const languagePercentage = getPercentage(count, totalLanguages);
-                            languageElementProgress.innerHTML =
-                                '<div class="language-statistics">' +
-                                '<div>' + language + '</div>' +
-                                '<div class="progress">' +
-                                '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentage + '%</div>' +
-                                '</div>' +
-                                '</div>';
+                            languageStatisticsSorted.forEach((count, language) => {
+                                let languageElementProgress = document.createElement("DIV");
+                                const languagePercentage = getPercentage(count, totalLanguages);
+                                languageElementProgress.innerHTML =
+                                    '<div class="language-statistics">' +
+                                    '<div>' + language + '</div>' +
+                                    '<div class="progress">' +
+                                    '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentage + '%</div>' +
+                                    '</div>' +
+                                    '</div>';
 
-                            languagesContainer.appendChild(languageElementProgress);
-                            const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
-                            setTimeout(() => {
-                                progressBar.style.width = languagePercentage + '%';
-                            }, 1000);
+                                languagesContainer.appendChild(languageElementProgress);
+                                const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
+                                setTimeout(() => {
+                                    progressBar.style.width = languagePercentage + '%';
+                                }, 1000);
+                            });
+
+                            resolve();
                         });
                     });
-
-                    fillValue(commits, commitsResponse.total_count);
                 });
             });
-            let fetchReposPromise = fetchRepos(username);
-            fetchReposPromise.then(reposResponseRaw => {
+
+            let reposStatisticsGathered = fetchRepos(username);
+            reposStatisticsGathered.then(reposResponseRaw => {
                 reposResponseRaw.json().then(repos => {
                     let starsCount = 0;
                     repos.forEach(repo => {
@@ -179,7 +184,7 @@ function inspectFormSubmitHandler(e) {
                 });
             });
 
-            Promise.all([fetchCommitsPromise, fetchReposPromise]).then(values => {
+            Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(() => {
                 loadingContainer.classList.remove('loading');
             });
         });
