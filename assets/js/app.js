@@ -118,11 +118,12 @@ function inspectFormSubmitHandler(e) {
                     commitsResponseRaw.json().then((commitsResponse) => {
                         fillValue(commits, commitsResponse.total_count);
 
-                        let repoLanguagesPromises = commitsResponse.items.filter((commit) => {
-                            return !commit.repository.fork; // filter out forks
-                        }).map((commit) => { // Do request for each repo
+                        let languageUrlsUnique = commitsResponse.items.reduce((accumulator, commit) => {
+                            return accumulator.add(commit.repository.languages_url);
+                        }, new Set());
+                        let repoLanguagesPromises = [...languageUrlsUnique.values()].map((language_url) => { // Do request for each repo
                             return new Promise((resolve) => {
-                                fetchRepo(commit.repository.languages_url, resolve);
+                                fetchRepo(language_url, resolve);
                             });
                         });
                         Promise.all(repoLanguagesPromises).then((repoResponses) => {
@@ -158,7 +159,7 @@ function inspectFormSubmitHandler(e) {
                                 const languagePercentage = getPercentage(count, totalLanguages);
                                 languageElementProgress.innerHTML =
                                     '<div class="language-statistics">' +
-                                    '<div>' + language + ' (' + formatBytes(count, 2) + ')</div>' +
+                                    '<div>' + language + '</div>' +
                                     '<div class="progress">' +
                                     '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentage + '%</div>' +
                                     '</div>' +
@@ -252,13 +253,4 @@ function getJudgement(type, value) {
 function checkIfUserExists(username) {
     const userQuery = 'https://api.github.com/users/' + username + '?access_token=' + accessToken;
     return fetch(userQuery);
-}
-
-function formatBytes(bytes, decimals) {
-    if(bytes == 0) return '0 Bytes';
-    const k = 1024,
-        dm = decimals || 3,
-        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-        i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
