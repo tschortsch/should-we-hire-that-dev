@@ -1,0 +1,25 @@
+{
+  "name": "github-user-inspector",
+  "version": "0.0.1",
+  "description": "Analyzes GitHub profile of a given user and gives you statistics",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tschortsch/should-we-hire-that-dev.git"
+  },
+  "author": "Juerg Hunziker <juerg.hunziker@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tschortsch/should-we-hire-that-dev/issues"
+  },
+  "homepage": "https://github.com/tschortsch/should-we-hire-that-dev#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-autoprefixer": "^3.1.1",
+    "gulp-notify": "^2.2.0",
+    "gulp-sass": "^3.1.0",
+    "gulp-sourcemaps": "^2.4.0"
+  }
+}
