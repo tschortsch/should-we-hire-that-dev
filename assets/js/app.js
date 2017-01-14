@@ -111,26 +111,14 @@ function inspectFormSubmitHandler(e) {
             let fetchCommitsPromise = fetchCommits(username);
             fetchCommitsPromise.then(commitsResponseRaw => {
                 commitsResponseRaw.json().then((commitsResponse) => {
-                    fillValue(commits, commitsResponse.total_count);
-                });
-            });
-            let fetchReposPromise = fetchRepos(username);
-            fetchReposPromise.then(reposResponseRaw => {
-                reposResponseRaw.json().then(repos => {
-                    let starsCount = 0;
-                    repos.forEach(repo => {
-                        starsCount += repo.stargazers_count;
-                    });
-                    fillValue(stars, starsCount);
-
-                    let repoRequestPromises = repos.filter((repo) => {
-                        return !repo.fork; // filter out forks
-                    }).map((repo) => { // Do request for each repo
+                    let repoLanguagesPromises = commitsResponse.items.filter((commit) => {
+                        return !commit.repository.fork; // filter out forks
+                    }).map((commit) => { // Do request for each repo
                         return new Promise((resolve) => {
-                            fetchRepo(repo.languages_url, resolve);
+                            fetchRepo(commit.repository.languages_url, resolve);
                         });
                     });
-                    Promise.all(repoRequestPromises).then((repoResponses) => {
+                    Promise.all(repoLanguagesPromises).then((repoResponses) => {
                         let totalLanguages = 0;
                         const languageStatistics = repoResponses.reduce((accumulator, repo) => {
                             Object.keys(repo).forEach(language => {
@@ -146,7 +134,7 @@ function inspectFormSubmitHandler(e) {
                             return accumulator;
                         }, new Map());
 
-                        const languagesSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
+                        const languageStatisticsSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
                             if(a[1] < b[1]) {
                                 return 1;
                             }
@@ -155,15 +143,17 @@ function inspectFormSubmitHandler(e) {
                             }
                             return 0;
                         }));
+                        console.log(languageStatisticsSorted);
+                        console.log(totalLanguages);
 
-                        languagesSorted.forEach((count, language) => {
+                        languageStatisticsSorted.forEach((count, language) => {
                             let languageElementProgress = document.createElement("DIV");
                             const languagePercentage = getPercentage(count, totalLanguages);
                             languageElementProgress.innerHTML =
                                 '<div class="language-statistics">' +
                                 '<div>' + language + '</div>' +
                                 '<div class="progress">' +
-                                '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' +  language + ' (' + languagePercentage + '%)</div>' +
+                                '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentage + '%</div>' +
                                 '</div>' +
                                 '</div>';
 
@@ -174,6 +164,18 @@ function inspectFormSubmitHandler(e) {
                             }, 1000);
                         });
                     });
+
+                    fillValue(commits, commitsResponse.total_count);
+                });
+            });
+            let fetchReposPromise = fetchRepos(username);
+            fetchReposPromise.then(reposResponseRaw => {
+                reposResponseRaw.json().then(repos => {
+                    let starsCount = 0;
+                    repos.forEach(repo => {
+                        starsCount += repo.stargazers_count;
+                    });
+                    fillValue(stars, starsCount);
                 });
             });
 
@@ -197,7 +199,7 @@ function getPercentage(value, total) {
 }
 
 function fetchCommits(username) {
-    const commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&access_token=' + accessToken;
+    const commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=100&access_token=' + accessToken;
     return fetch(commitQueryUrl, {
         headers: commitApiHeaders
     });
