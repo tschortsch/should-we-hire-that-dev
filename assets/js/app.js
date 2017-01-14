@@ -24,6 +24,7 @@ const repos = document.querySelector('#repos');
 const stars = document.querySelector('#stars');
 const avatar = document.querySelector('#avatar');
 const name = document.querySelector('#name');
+const userLocation = document.querySelector('#location');
 const languagesContainer = document.querySelector('#languages');
 
 const commitApiHeaders = new Headers();
@@ -32,7 +33,7 @@ inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuth.addEventListener('click', githubAuthSubmitHandler);
 githubLogout.addEventListener('submit', githubLogoutSubmitHandler);
 
-const statisticsContainers = [commits, followers, userSince, userSinceFromNow, repos, stars];
+const statisticsContainers = [name, userLocation, commits, followers, userSince, userSinceFromNow, repos, stars];
 
 const judgementLimits = {
     'commits': {
@@ -78,7 +79,6 @@ function inspectFormSubmitHandler(e) {
     });
     avatar.innerHTML = '';
     languagesContainer.innerHTML = '';
-    name.innerHTML = '-';
 
     const username = usernameInput.value;
     let userCheckPromise = checkIfUserExists(username);
@@ -95,6 +95,7 @@ function inspectFormSubmitHandler(e) {
         responseRaw.json().then((userResponse) => {
             console.log(userResponse);
             fillValue(name, userResponse.name);
+            fillValue(userLocation, userResponse.location);
             fillValue(followers, userResponse.followers);
             const createdAt = new Date(userResponse.created_at);
             const createdAtMoment = moment(createdAt);
@@ -154,7 +155,7 @@ function inspectFormSubmitHandler(e) {
                                 const languagePercentage = getPercentage(count, totalLanguages);
                                 languageElementProgress.innerHTML =
                                     '<div class="language-statistics">' +
-                                    '<div>' + language + '</div>' +
+                                    '<div>' + language + ' (' + formatBytes(count, 2) + ')</div>' +
                                     '<div class="progress">' +
                                     '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentage + '%</div>' +
                                     '</div>' +
@@ -248,4 +249,13 @@ function getJudgement(type, value) {
 function checkIfUserExists(username) {
     const userQuery = 'https://api.github.com/users/' + username + '?access_token=' + accessToken;
     return fetch(userQuery);
+}
+
+function formatBytes(bytes, decimals) {
+    if(bytes == 0) return '0 Bytes';
+    const k = 1024,
+        dm = decimals || 3,
+        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+        i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
