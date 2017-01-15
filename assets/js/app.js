@@ -254,3 +254,95 @@ function checkIfUserExists(username) {
     const userQuery = 'https://api.github.com/users/' + username + '?access_token=' + accessToken;
     return fetch(userQuery);
 }
+
+/**
+ * Username Placeholder Animation
+ */
+let currentPlaceholderTimeout = null;
+
+usernameInput.addEventListener('focus', (e) => {
+    if(currentPlaceholderTimeout !== null) {
+        clearTimeout(currentPlaceholderTimeout);
+    }
+    usernameInput.placeholder = 'that dev';
+});
+usernameInput.addEventListener('blur', (e) => {
+    if(e.target.value === '') {
+        clearCurrentTimeout();
+        currentPlaceholderTimeout = setTimeout(usernameAnimation, 5000);
+    }
+});
+
+function usernameAnimation() {
+    new Promise((resolve) => {
+        usernameInput.placeholder = '';
+        type('tschortsch', resolve);
+    }).then(() => {
+        clearCurrentTimeout();
+        currentPlaceholderTimeout = setTimeout(() => {
+            new Promise((resolve) => {
+                erase(resolve);
+            }).then(() => {
+                new Promise((resolve) => {
+                    clearCurrentTimeout();
+                    currentPlaceholderTimeout = setTimeout(() => {
+                        type('GitHub username', resolve);
+                    }, 1000);
+                }).then(() => {
+                    clearCurrentTimeout();
+                    currentPlaceholderTimeout = setTimeout(() => {
+                        new Promise((resolve) => {
+                            erase(resolve);
+                        }).then(() => {
+                            clearCurrentTimeout();
+                            currentPlaceholderTimeout = setTimeout(() => {
+                                usernameInput.placeholder = 'that dev';
+                            }, 1000);
+                        });
+                    }, 2000);
+                });
+            });
+        }, 2000);
+    });
+}
+
+function type(text, resolve) {
+    let textLength = text.length;
+
+    if(textLength > 0) {
+        const currentPlaceholderText = usernameInput.placeholder;
+        const nextCharacter = text.charAt(0);
+        const remainingText = text.substr(1, textLength);
+        usernameInput.placeholder += nextCharacter;
+        clearCurrentTimeout();
+        currentPlaceholderTimeout = setTimeout(() => {
+            type(remainingText, resolve);
+        }, 300);
+    } else {
+        currentPlaceholderTimeout = null;
+        resolve();
+    }
+}
+
+function erase(resolve) {
+    const currentPlaceholderText = usernameInput.placeholder;
+    usernameInput.placeholder = currentPlaceholderText.substr(0, --currentPlaceholderText.length);
+    if(usernameInput.placeholder.length > 0) {
+        clearCurrentTimeout();
+        currentPlaceholderTimeout = setTimeout(() => {
+            erase(resolve);
+        }, 150);
+    } else {
+        currentPlaceholderTimeout = null;
+        resolve();
+    }
+}
+
+function clearCurrentTimeout() {
+    if(currentPlaceholderTimeout !== null) {
+        clearTimeout(currentPlaceholderTimeout);
+    }
+    currentPlaceholderTimeout = null;
+}
+
+currentPlaceholderTimeout = setTimeout(usernameAnimation, 5000);
