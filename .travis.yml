@@ -4,6 +4,8 @@ php:
 - '7.0'
 - '7.1'
 sudo: false
+before_script:
+  - npm install
 script: ./scripts/build.sh
 before_deploy: ./scripts/deploy_heroku.sh
 deploy:
