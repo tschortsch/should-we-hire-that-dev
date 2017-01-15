@@ -16,27 +16,27 @@ if(!accessToken) {
 }
 
 const loadingContainer = document.querySelector('#loading-container');
-const githubAuth = document.querySelector('#github-auth');
+const githubAuthButton = document.querySelector('button#github-auth');
 const usernameInput = document.querySelector('#username');
-const commits = document.querySelector('#commits');
+const commitsValue = document.querySelector('#commits');
 const userNotFound = document.querySelector('#user-not-found');
-const followers = document.querySelector('#followers');
-const userSince = document.querySelector('#user-since');
-const userSinceFromNow = document.querySelector('#user-since-from-now');
-const repos = document.querySelector('#repos');
-const stars = document.querySelector('#stars');
-const avatar = document.querySelector('#avatar');
-const name = document.querySelector('#name');
-const userLocation = document.querySelector('#location');
+const followersValue = document.querySelector('#followers');
+const userSinceValue = document.querySelector('#user-since');
+const userSinceFromNowValue = document.querySelector('#user-since-from-now');
+const reposValue = document.querySelector('#repos');
+const starsValue = document.querySelector('#stars');
+const avatarWrapper = document.querySelector('#avatar-wrapper');
+const nameValue = document.querySelector('#name');
+const userLocationValue = document.querySelector('#location');
 const languagesContainer = document.querySelector('#languages');
 
 const commitApiHeaders = new Headers();
 commitApiHeaders.append('Accept', 'application/vnd.github.cloak-preview');
 inspectForm.addEventListener('submit', inspectFormSubmitHandler);
-githubAuth.addEventListener('click', githubAuthSubmitHandler);
+githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
 githubLogout.addEventListener('submit', githubLogoutSubmitHandler);
 
-const statisticsContainers = [name, userLocation, commits, followers, userSince, userSinceFromNow, repos, stars];
+const statisticsContainers = [nameValue, userLocationValue, commitsValue, followersValue, userSinceValue, userSinceFromNowValue, reposValue, starsValue];
 
 const judgementLimits = {
     'commits': {
@@ -67,7 +67,7 @@ const judgementLimits = {
 };
 
 function githubAuthSubmitHandler(e) {
-    window.location.href = 'https://github.com/login/oauth/authorize?client_id=3a54502458a4cd3feabe';
+    window.location.href = './github-auth.php';
     e.preventDefault();
 }
 function githubLogoutSubmitHandler(e) {
@@ -80,7 +80,7 @@ function inspectFormSubmitHandler(e) {
     statisticsContainers.forEach((container) => {
         container.innerText = '-';
     });
-    avatar.innerHTML = '';
+    avatarWrapper.innerHTML = '';
     languagesContainer.innerHTML = '';
 
     const username = usernameInput.value;
@@ -97,26 +97,26 @@ function inspectFormSubmitHandler(e) {
         }
         responseRaw.json().then((userResponse) => {
             console.log(userResponse);
-            fillValue(name, userResponse.name);
-            fillValue(userLocation, userResponse.location);
-            fillValue(followers, userResponse.followers);
+            fillValue(nameValue, userResponse.name);
+            fillValue(userLocationValue, userResponse.location);
+            fillValue(followersValue, userResponse.followers);
             const createdAt = new Date(userResponse.created_at);
             const createdAtMoment = moment(createdAt);
             const createdAtTimestamp = createdAtMoment.unix();
             const currentTimestamp = moment().unix();
-            fillValue(userSince, createdAtMoment.format('(DD.MM.YYYY)'));
-            fillValue(userSinceFromNow, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
-            fillValue(repos, userResponse.public_repos);
+            fillValue(userSinceValue, createdAtMoment.format('(DD.MM.YYYY)'));
+            fillValue(userSinceFromNowValue, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
+            fillValue(reposValue, userResponse.public_repos);
 
             let avatarImg = document.createElement('img');
             avatarImg.src = userResponse.avatar_url;
-            avatar.append(avatarImg);
+            avatarWrapper.append(avatarImg);
 
             let commitsStatisticsGatheredPromise = new Promise((resolve) => {
                 let fetchCommitsPromise = fetchCommits(username);
                 fetchCommitsPromise.then(commitsResponseRaw => {
                     commitsResponseRaw.json().then((commitsResponse) => {
-                        fillValue(commits, commitsResponse.total_count);
+                        fillValue(commitsValue, commitsResponse.total_count);
 
                         let languageUrlsUnique = commitsResponse.items.reduce((accumulator, commit) => {
                             return accumulator.add(commit.repository.languages_url);
@@ -185,7 +185,7 @@ function inspectFormSubmitHandler(e) {
                     repos.forEach(repo => {
                         starsCount += repo.stargazers_count;
                     });
-                    fillValue(stars, starsCount);
+                    fillValue(starsValue, starsCount);
                 });
             });
 

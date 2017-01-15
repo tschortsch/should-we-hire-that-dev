@@ -131,16 +131,17 @@ $avatar-border-size: 5px;
     position: relative;
 }
 
-#avatar {
+#avatar-wrapper {
     position: absolute;
     top: $avatar-border-size;
     left: 50%;
     transform: translateX(-50%);
-}
-#avatar img {
-    width: $avatar-size;
-    height: $avatar-size;
-    border-radius: 50%;
+
+    img {
+        width: $avatar-size;
+        height: $avatar-size;
+        border-radius: 50%;
+    }
 }
 
 #loading-container {

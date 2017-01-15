@@ -8,7 +8,12 @@ if( empty( getenv('GH_CLIENT_SECRET') ) ) {
 
 $code = '';
 $access_token = '';
-if(isset($_GET['code'])) {
+if(!isset($_GET['code'])) {
+    // request code
+    header('Location: https://github.com/login/oauth/authorize?client_id=' . getenv('GH_CLIENT_ID'));
+    exit;
+} else {
+    // exchange code to access_token
     $code = $_GET['code'];
     $post_data = array(
         'client_id' => getenv('GH_CLIENT_ID'),
@@ -39,7 +44,7 @@ if(isset($_GET['code'])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Should we hire that dev? - GitHub Authorization</title>
 </head>
 <body>
 
@@ -50,6 +55,7 @@ if(isset($_GET['code'])) {
     }
     ?>
     if(accessToken && accessToken !== '') {
+        // save access_token to localStorage
         window.localStorage.setItem('swhtd-gh-access-token', accessToken);
         window.location.href = './';
     }
