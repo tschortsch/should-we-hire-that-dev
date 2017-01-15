@@ -5,5 +5,6 @@ set -e
 
 DIR=`dirname $0`
 
+echo "--- before deploy ---"
 gulp styles
 echo "Styles task complete!"
