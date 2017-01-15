@@ -17,8 +17,7 @@ gulp.task('styles', function () {
         }).on('error', sass.logError))
         .pipe(autoprefixer('last 2 version'))
         .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('./assets/css'))
-        .pipe(notify({message: 'Frontend styles task complete', onLast: true}));
+        .pipe(gulp.dest('./assets/css'));
 });
 
 gulp.task('scripts', function () {
@@ -31,8 +30,7 @@ gulp.task('scripts', function () {
         ])
         .pipe(concat('app.min.js'))
         .pipe(uglify())
-        .pipe(gulp.dest('./assets/js'))
-        .pipe(gulpif(!argv.headless, notify({message: 'Scripts task complete', onLast: true})));
+        .pipe(gulp.dest('./assets/js'));
 });
 
 gulp.task('deploy', [ 'styles', 'scripts' ]);
