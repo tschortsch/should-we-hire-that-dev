@@ -3,10 +3,9 @@ php:
 - '5.6'
 - '7.0'
 - '7.1'
-env:
-  - TRAVIS_NODE_VERSION="6"
 sudo: false
 before_script:
+  - nvm install 6
   - npm install
 script: ./scripts/build.sh
 before_deploy: ./scripts/deploy_heroku.sh
