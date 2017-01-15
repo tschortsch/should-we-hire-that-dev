@@ -8,6 +8,6 @@ DIR=`dirname $0`
 echo "starting build..."
 
 echo "compiling css assets"
-gulp styles
+gulp deploy
 
 echo "build finished!"

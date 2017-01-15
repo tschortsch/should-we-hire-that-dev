@@ -30,8 +30,6 @@ const nameValue = document.querySelector('#name');
 const userLocationValue = document.querySelector('#location');
 const languagesContainer = document.querySelector('#languages');
 
-const commitApiHeaders = new Headers();
-commitApiHeaders.append('Accept', 'application/vnd.github.cloak-preview');
 inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
 githubLogout.addEventListener('submit', githubLogoutSubmitHandler);
@@ -211,7 +209,9 @@ function getPercentage(value, total) {
 function fetchCommits(username) {
     const commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=100&access_token=' + accessToken;
     return fetch(commitQueryUrl, {
-        headers: commitApiHeaders
+        headers: {
+            'Accept': 'application/vnd.github.cloak-preview'
+        }
     });
 }
 function fetchRepos(username) {

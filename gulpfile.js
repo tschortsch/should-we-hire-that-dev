@@ -1,7 +1,8 @@
 var gulp = require('gulp'),
+    babel = require('gulp-babel'),
     sass = require('gulp-sass'),
-    //concat = require('gulp-concat'),
-    //uglify = require('gulp-uglify'),
+    concat = require('gulp-concat'),
+    uglify = require('gulp-uglify'),
     notify = require('gulp-notify'),
     sourcemaps = require('gulp-sourcemaps'),
     autoprefixer = require('gulp-autoprefixer');
@@ -22,14 +23,15 @@ gulp.task('styles', function () {
 
 gulp.task('scripts', function () {
     return gulp.src([
-            './assets/external/jquery.easing/jquery.easing.js',
-            './assets/external/bootstrap-sass/assets/javascripts/bootstrap.js',
-            './assets/external/Leaflet/dist/leaflet-src.js',
-            './assets/external/Leaflet.markercluster/dist/leaflet.markercluster-src.js',
             './assets/js/app.js'
         ])
+        .pipe(sourcemaps.init())
         .pipe(concat('app.min.js'))
+        .pipe(babel({
+            presets: ['es2015']
+        }))
         .pipe(uglify())
+        .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('./assets/js'));
 });
 

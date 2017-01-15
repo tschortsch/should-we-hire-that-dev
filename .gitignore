@@ -1,4 +1,6 @@
 .idea/
 .DS_Store
 assets/css/
+assets/js/*.min.js
+assets/js/*.min.js.map
 node_modules/
