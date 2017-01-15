@@ -1,4 +1,7 @@
 <?php
+if( empty( getenv('GH_CLIENT_ID') ) ) {
+    die('GH_CLIENT_ID environment variable is not set!');
+}
 if( empty( getenv('GH_CLIENT_SECRET') ) ) {
     die('GH_CLIENT_SECRET environment variable is not set!');
 }
@@ -8,7 +11,7 @@ $access_token = '';
 if(isset($_GET['code'])) {
     $code = $_GET['code'];
     $post_data = array(
-        'client_id' => '3a54502458a4cd3feabe',
+        'client_id' => getenv('GH_CLIENT_ID'),
         'client_secret' => getenv('GH_CLIENT_SECRET'),
         'code' => $code,
     );
@@ -48,7 +51,7 @@ if(isset($_GET['code'])) {
     ?>
     if(accessToken && accessToken !== '') {
         window.localStorage.setItem('swhtd-gh-access-token', accessToken);
-        window.location.href = 'http://localhost/~tschortsch/github-user-inspector/';
+        window.location.href = './';
     }
 </script>
 </body>
