@@ -7,7 +7,6 @@ sudo: false
 script: ./scripts/build.sh
 deploy:
   provider: heroku
-  skip_cleanup: true
   before_deploy: ./scripts/before_deploy.sh
   app: shouldwehirethatdev
   api_key:
