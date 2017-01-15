@@ -58,6 +58,14 @@ h3 {
         }
     }
 
+    .username-input-wrapper {
+        display: flex;
+
+        .questionmark {
+            margin-left: 0.7rem;
+        }
+    }
+
     .form-text {
         font-size: $font-size-sm;
     }
