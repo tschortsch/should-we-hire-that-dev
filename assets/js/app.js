@@ -85,7 +85,6 @@ function inspectFormSubmitHandler(e) {
     let userCheckPromise = checkIfUserExists(username);
 
     userCheckPromise.then((responseRaw) => {
-        console.log(responseRaw);
         if(!responseRaw.ok) {
             userInformation.style.display = 'none';
             userNotFound.style.display = 'inline-block';
