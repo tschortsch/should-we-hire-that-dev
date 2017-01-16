@@ -42,7 +42,6 @@ h3 {
 
     @include media-breakpoint-up(md) {
         display: flex;
-        align-items: baseline;
     }
 
     > .flex-item {
