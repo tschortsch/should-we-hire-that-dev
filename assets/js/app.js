@@ -82,14 +82,14 @@ function inspectFormSubmitHandler(e) {
         console.log(responseRaw);
         if(!responseRaw.ok) {
             if(responseRaw.status === 401) {
-                errorValue.innerText = 'Something is wrong with your access_token. Please login again.';
+                setError('Something is wrong with your access_token. Please login again.');
                 removeAccessTokenFromLocalStorage();
                 setState('login');
             } else if(responseRaw.status === 404) {
-                errorValue.innerText = 'User not found. Try another username.';
+                setError('User not found. Try another username.');
                 setState('search');
             } else {
-                errorValue.innerText = 'Something went wrong!';
+                setError('Something went wrong!');
                 setState('search');
             }
             stopLoading();
@@ -192,7 +192,7 @@ function inspectFormSubmitHandler(e) {
             Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(stopLoading);
         });
     }, (rejectedRaw) => {
-        errorValue.innerText = rejectedRaw.statusText;
+        setError(rejectedRaw.statusText);
         stopLoading();
     });
 }
@@ -372,13 +372,16 @@ function setState(state) {
     }
 }
 
+function setError(message) {
+    errorValue.innerText = message;
+}
 function clearValues() {
     statisticsContainers.forEach((container) => {
         container.innerText = '-';
     });
     avatarWrapper.innerHTML = '';
     languagesContainer.innerHTML = '';
-    errorValue.innerText = '';
+    setError('');
 }
 function startLoading() {
     usernameInput.disabled = true;
