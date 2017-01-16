@@ -326,7 +326,7 @@ function type(text, resolve) {
 
 function erase(resolve) {
     const currentPlaceholderText = usernameInput.placeholder;
-    usernameInput.placeholder = currentPlaceholderText.substr(0, --currentPlaceholderText.length);
+    usernameInput.placeholder = currentPlaceholderText.substr(0, currentPlaceholderText.length - 1);
     if(usernameInput.placeholder.length > 0) {
         clearCurrentTimeout();
         currentPlaceholderTimeout = setTimeout(() => {
