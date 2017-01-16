@@ -38,7 +38,9 @@
                 </div>
             </form>
         </div>
-        <div class="offset-lg-2 col-lg-8 text-center">
+        <div class="offset-xl-2 col-xl-8 offset-lg-1 col-lg-10 text-center">
+            <div id="error" class="text-danger"></div>
+
             <div id="github-auth-container">
                 <p>
                     Since the <a href="https://developer.github.com/v3/#rate-limiting">GitHub API rate limits</a> are pretty low for unauthorized requests you have to sign in with your GitHub account first.
@@ -47,7 +49,6 @@
                 <button id="github-auth" class="btn btn-primary">Authorize with GitHub</button>
             </div>
 
-            <div id="user-not-found" class="text-danger">User not found!</div>
             <div id="user-information">
                 <div id="avatar-container" class="buffer-bottom">
                     <div id="loading-container"></div>

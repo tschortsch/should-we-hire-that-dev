@@ -7,19 +7,16 @@ const inspectForm = document.querySelector('#inspectform');
 const userInformation = document.querySelector('#user-information');
 
 if(!accessToken) {
-    console.log('please login first!');
+    setState('login');
 } else {
-    pageTitle.style.display = 'none';
-    githubAuthContainer.style.display = 'none';
-    githubLogout.style.display = 'block';
-    inspectForm.style.display = 'block';
+    setState('search');
 }
 
 const loadingContainer = document.querySelector('#loading-container');
 const githubAuthButton = document.querySelector('button#github-auth');
 const usernameInput = document.querySelector('#username');
 const commitsValue = document.querySelector('#commits');
-const userNotFound = document.querySelector('#user-not-found');
+const errorValue = document.querySelector('#error');
 const followersValue = document.querySelector('#followers');
 const userSinceValue = document.querySelector('#user-since');
 const userSinceFromNowValue = document.querySelector('#user-since-from-now');
@@ -32,7 +29,7 @@ const languagesContainer = document.querySelector('#languages');
 
 inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
-githubLogout.addEventListener('submit', githubLogoutSubmitHandler);
+githubLogout.addEventListener('submit', removeAccessTokenFromLocalStorage);
 
 const statisticsContainers = [nameValue, userLocationValue, commitsValue, followersValue, userSinceValue, userSinceFromNowValue, reposValue, starsValue];
 
@@ -68,30 +65,35 @@ function githubAuthSubmitHandler(e) {
     window.location.href = './github-auth.php';
     e.preventDefault();
 }
-function githubLogoutSubmitHandler(e) {
+function removeAccessTokenFromLocalStorage() {
     window.localStorage.removeItem('swhtd-gh-access-token');
 }
 
 function inspectFormSubmitHandler(e) {
     e.preventDefault();
-    loadingContainer.classList.add('loading');
-    statisticsContainers.forEach((container) => {
-        container.innerText = '-';
-    });
-    avatarWrapper.innerHTML = '';
-    languagesContainer.innerHTML = '';
+    startLoading();
+    clearValues();
+    setState('userinfo');
 
     const username = usernameInput.value;
     let userCheckPromise = checkIfUserExists(username);
 
     userCheckPromise.then((responseRaw) => {
+        console.log(responseRaw);
         if(!responseRaw.ok) {
-            userInformation.style.display = 'none';
-            userNotFound.style.display = 'inline-block';
+            if(responseRaw.status === 401) {
+                errorValue.innerText = 'Something is wrong with your access_token. Please login again.';
+                removeAccessTokenFromLocalStorage();
+                setState('login');
+            } else if(responseRaw.status === 404) {
+                errorValue.innerText = 'User not found. Try another username.';
+                setState('search');
+            } else {
+                errorValue.innerText = 'Something went wrong!';
+                setState('search');
+            }
+            stopLoading();
             return;
-        } else {
-            userInformation.style.display = 'inline-block';
-            userNotFound.style.display = 'none';
         }
         responseRaw.json().then((userResponse) => {
             console.log(userResponse);
@@ -187,10 +189,11 @@ function inspectFormSubmitHandler(e) {
                 });
             });
 
-            Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(() => {
-                loadingContainer.classList.remove('loading');
-            });
+            Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(stopLoading);
         });
+    }, (rejectedRaw) => {
+        errorValue.innerText = rejectedRaw.statusText;
+        stopLoading();
     });
 }
 
@@ -346,3 +349,42 @@ function clearCurrentTimeout() {
 }
 
 currentPlaceholderTimeout = setTimeout(usernameAnimation, 5000);
+
+function setState(state) {
+    if(state === 'login') {
+        pageTitle.style.display = 'block';
+        githubAuthContainer.style.display = 'inline-block';
+        inspectForm.style.display = 'none';
+        githubLogout.style.display = 'none';
+        userInformation.style.display = 'none';
+    } else if(state === 'search') {
+        pageTitle.style.display = 'none';
+        githubAuthContainer.style.display = 'none';
+        inspectForm.style.display = 'block';
+        githubLogout.style.display = 'block';
+        userInformation.style.display = 'none';
+    } else if(state === 'userinfo') {
+        pageTitle.style.display = 'none';
+        githubAuthContainer.style.display = 'none';
+        inspectForm.style.display = 'block';
+        githubLogout.style.display = 'block';
+        userInformation.style.display = 'block';
+    }
+}
+
+function clearValues() {
+    statisticsContainers.forEach((container) => {
+        container.innerText = '-';
+    });
+    avatarWrapper.innerHTML = '';
+    languagesContainer.innerHTML = '';
+    errorValue.innerText = '';
+}
+function startLoading() {
+    usernameInput.disabled = true;
+    loadingContainer.classList.add('loading');
+}
+function stopLoading() {
+    usernameInput.disabled = false;
+    loadingContainer.classList.remove('loading');
+}
