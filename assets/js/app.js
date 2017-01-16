@@ -113,67 +113,81 @@ function inspectFormSubmitHandler(e) {
             avatarWrapper.append(avatarImg);
 
             let commitsStatisticsGatheredPromise = new Promise((resolve) => {
-                let fetchCommitsPromise = fetchCommits(username);
-                fetchCommitsPromise.then(commitsResponseRaw => {
-                    commitsResponseRaw.json().then((commitsResponse) => {
-                        fillValue(commitsValue, commitsResponse.total_count);
-
-                        let languageUrlsUnique = commitsResponse.items.reduce((accumulator, commit) => {
-                            return accumulator.add(commit.repository.languages_url);
-                        }, new Set());
-                        let repoLanguagesPromises = [...languageUrlsUnique.values()].map((language_url) => { // Do request for each repo
-                            return new Promise((resolve) => {
-                                fetchRepo(language_url, resolve);
-                            });
+                let fetchCommitsPromises = [];
+                for(let page = 0; page < 5; page++) {
+                    fetchCommitsPromises.push(new Promise((resolve) => {
+                        fetchCommits(username, page).then(commitsResponseRaw => {
+                            commitsResponseRaw.json().then(commitsResponse => {
+                                resolve(commitsResponse);
+                            })
                         });
-                        Promise.all(repoLanguagesPromises).then((repoResponses) => {
-                            let totalLanguages = 0;
-                            const languageStatistics = repoResponses.reduce((accumulator, repo) => {
-                                Object.keys(repo).forEach(language => {
-                                    let count = accumulator.get(language);
-                                    if(count) {
-                                        count += repo[language];
-                                    } else {
-                                        count = repo[language];
-                                    }
-                                    accumulator.set(language, count);
-                                    totalLanguages += repo[language];
-                                });
-                                return accumulator;
-                            }, new Map());
+                    }));
+                }
 
-                            const languageStatisticsSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
-                                if(a[1] < b[1]) {
-                                    return 1;
-                                }
-                                if(a[1] > b[1]) {
-                                    return -1;
-                                }
-                                return 0;
-                            }));
-                            console.log(languageStatisticsSorted);
-                            console.log(totalLanguages);
+                Promise.all(fetchCommitsPromises).then(commitsResponses => {
+                    fillValue(commitsValue, commitsResponses[0].total_count);
 
-                            languageStatisticsSorted.forEach((count, language) => {
-                                let languageElementProgress = document.createElement("DIV");
-                                const languagePercentage = getPercentage(count, totalLanguages);
-                                languageElementProgress.innerHTML =
-                                    '<div class="language-statistics">' +
-                                    '<div>' + language + '</div>' +
-                                    '<div class="progress">' +
-                                    '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentage + '%</div>' +
-                                    '</div>' +
-                                    '</div>';
+                    let allCommitItems = [];
+                    commitsResponses.forEach(commitsResponse => {
+                        allCommitItems = allCommitItems.concat(commitsResponse.items);
+                    });
 
-                                languagesContainer.appendChild(languageElementProgress);
-                                const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
-                                setTimeout(() => {
-                                    progressBar.style.width = languagePercentage + '%';
-                                }, 1000);
-                            });
+                    let languageUrlsUnique = allCommitItems.reduce((accumulator, commit) => {
+                        return accumulator.add(commit.repository.languages_url);
+                    }, new Set());
 
-                            resolve();
+                    let repoLanguagesPromises = [...languageUrlsUnique.values()].map((language_url) => { // Do request for each repo
+                        return new Promise((resolve) => {
+                            fetchRepo(language_url, resolve);
                         });
+                    });
+                    Promise.all(repoLanguagesPromises).then((repoResponses) => {
+                        let totalLanguages = 0;
+                        const languageStatistics = repoResponses.reduce((accumulator, repo) => {
+                            Object.keys(repo).forEach(language => {
+                                let count = accumulator.get(language);
+                                if(count) {
+                                    count += repo[language];
+                                } else {
+                                    count = repo[language];
+                                }
+                                accumulator.set(language, count);
+                                totalLanguages += repo[language];
+                            });
+                            return accumulator;
+                        }, new Map());
+
+                        const languageStatisticsSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
+                            if(a[1] < b[1]) {
+                                return 1;
+                            }
+                            if(a[1] > b[1]) {
+                                return -1;
+                            }
+                            return 0;
+                        }));
+                        console.log(languageStatisticsSorted);
+                        console.log(totalLanguages);
+
+                        languageStatisticsSorted.forEach((count, language) => {
+                            let languageElementProgress = document.createElement("DIV");
+                            const languagePercentage = getPercentage(count, totalLanguages);
+                            languageElementProgress.innerHTML =
+                                '<div class="language-statistics">' +
+                                '<div>' + language + '</div>' +
+                                '<div class="progress">' +
+                                '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentage + '%</div>' +
+                                '</div>' +
+                                '</div>';
+
+                            languagesContainer.appendChild(languageElementProgress);
+                            const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
+                            setTimeout(() => {
+                                progressBar.style.width = languagePercentage + '%';
+                            }, 1000);
+                        });
+
+                        resolve();
                     });
                 });
             });
@@ -209,8 +223,8 @@ function getPercentage(value, total) {
     return Math.round(value *  100 / total);
 }
 
-function fetchCommits(username) {
-    const commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=100&access_token=' + accessToken;
+function fetchCommits(username, page) {
+    const commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=100&page=' + page + '&access_token=' + accessToken;
     return fetch(commitQueryUrl, {
         headers: {
             'Accept': 'application/vnd.github.cloak-preview'
