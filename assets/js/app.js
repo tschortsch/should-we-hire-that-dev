@@ -2,18 +2,14 @@ const accessToken = window.localStorage.getItem('swhtd-gh-access-token');
 
 const pageTitle = document.querySelector('#page-title');
 const githubAuthContainer = document.querySelector('#github-auth-container');
+const githubAuthButton = document.querySelector('#github-auth');
 const githubLogout = document.querySelector('#github-logout');
 const inspectForm = document.querySelector('#inspectform');
 const userInformation = document.querySelector('#user-information');
 
-if(!accessToken) {
-    setState('login');
-} else {
-    setState('search');
-}
+setState('search');
 
 const loadingContainer = document.querySelector('#loading-container');
-const githubAuthButton = document.querySelector('button#github-auth');
 const usernameInput = document.querySelector('#username');
 const commitsValue = document.querySelector('#commits');
 const errorValue = document.querySelector('#error');
@@ -80,6 +76,12 @@ function inspectFormSubmitHandler(e) {
 
     userCheckPromise.then((responseRaw) => {
         console.log(responseRaw);
+        if(rateLimitExceeded(responseRaw.headers)) {
+            setError(getRateLimitReason(responseRaw.headers));
+            setState('login');
+            stopLoading();
+            return;
+        }
         if(!responseRaw.ok) {
             if(responseRaw.status === 401) {
                 setError('Something is wrong with your access_token. Please login again.');
@@ -115,16 +117,32 @@ function inspectFormSubmitHandler(e) {
             let commitsStatisticsGatheredPromise = new Promise((resolve) => {
                 let fetchCommitsPromises = [];
                 for(let page = 0; page < 5; page++) {
-                    fetchCommitsPromises.push(new Promise((resolve) => {
+                    let fetchCommitsPromise = new Promise((resolve, reject) => {
                         fetchCommits(username, page).then(commitsResponseRaw => {
+                            if(rateLimitExceeded(commitsResponseRaw.headers)) {
+                                reject(new Error(getRateLimitReason(commitsResponseRaw.headers)));
+                            }
                             commitsResponseRaw.json().then(commitsResponse => {
                                 resolve(commitsResponse);
-                            })
+                            });
                         });
-                    }));
+                    }).catch(reason => {
+                        setError(reason);
+                        setState('login');
+                    });
+                    fetchCommitsPromises.push(fetchCommitsPromise);
                 }
 
                 Promise.all(fetchCommitsPromises).then(commitsResponses => {
+                    // if one promise value is undefined (when it gets rejected) stop gathering statistics value
+                    const allPromisesResolved = commitsResponses.reduce((accumulator, currentValue) => {
+                        return accumulator && currentValue;
+                    });
+                    if(!allPromisesResolved) {
+                        resolve();
+                        return;
+                    }
+
                     fillValue(commitsValue, commitsResponses[0].total_count);
 
                     let allCommitItems = [];
@@ -138,7 +156,7 @@ function inspectFormSubmitHandler(e) {
 
                     let repoLanguagesPromises = [...languageUrlsUnique.values()].map((language_url) => { // Do request for each repo
                         return new Promise((resolve) => {
-                            fetchRepo(language_url, resolve);
+                            fetchRepoLanguages(language_url, resolve);
                         });
                     });
                     Promise.all(repoLanguagesPromises).then((repoResponses) => {
@@ -211,8 +229,11 @@ function inspectFormSubmitHandler(e) {
     });
 }
 
-function fetchRepo(repoUrl, resolve) {
-    fetch(repoUrl + '?access_token=' + accessToken).then((repoResponseRaw) => {
+function fetchRepoLanguages(repoUrl, resolve) {
+    if(accessToken) {
+        repoUrl += '?access_token=' + accessToken;
+    }
+    fetch(repoUrl).then((repoResponseRaw) => {
         repoResponseRaw.json().then((repo) => {
             resolve(repo);
         });
@@ -224,7 +245,10 @@ function getPercentage(value, total) {
 }
 
 function fetchCommits(username, page) {
-    const commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=100&page=' + page + '&access_token=' + accessToken;
+    let commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=100&page=' + page;
+    if(accessToken) {
+        commitQueryUrl += '&access_token=' + accessToken;
+    }
     return fetch(commitQueryUrl, {
         headers: {
             'Accept': 'application/vnd.github.cloak-preview'
@@ -232,7 +256,10 @@ function fetchCommits(username, page) {
     });
 }
 function fetchRepos(username) {
-    const reposQueryUrl = 'https://api.github.com/users/' + username + '/repos?access_token=' + accessToken;
+    let reposQueryUrl = 'https://api.github.com/users/' + username + '/repos';
+    if(accessToken) {
+        reposQueryUrl += '?access_token=' + accessToken;
+    }
     return fetch(reposQueryUrl);
 }
 
@@ -268,7 +295,10 @@ function getJudgement(type, value) {
 }
 
 function checkIfUserExists(username) {
-    const userQuery = 'https://api.github.com/users/' + username + '?access_token=' + accessToken;
+    let userQuery = 'https://api.github.com/users/' + username;
+    if(accessToken) {
+        userQuery += '?access_token=' + accessToken;
+    }
     return fetch(userQuery);
 }
 
@@ -367,22 +397,25 @@ currentPlaceholderTimeout = setTimeout(usernameAnimation, 5000);
 function setState(state) {
     if(state === 'login') {
         pageTitle.style.display = 'block';
-        githubAuthContainer.style.display = 'inline-block';
         inspectForm.style.display = 'none';
-        githubLogout.style.display = 'none';
         userInformation.style.display = 'none';
     } else if(state === 'search') {
         pageTitle.style.display = 'none';
-        githubAuthContainer.style.display = 'none';
         inspectForm.style.display = 'block';
-        githubLogout.style.display = 'block';
         userInformation.style.display = 'none';
     } else if(state === 'userinfo') {
         pageTitle.style.display = 'none';
-        githubAuthContainer.style.display = 'none';
         inspectForm.style.display = 'block';
-        githubLogout.style.display = 'block';
         userInformation.style.display = 'block';
+    }
+    if(accessToken) {
+        githubLogout.style.display = 'block';
+        githubAuthContainer.style.display = 'none';
+        githubAuthButton.style.display = 'none';
+    } else {
+        githubLogout.style.display = 'none';
+        githubAuthContainer.style.display = 'block';
+        githubAuthButton.style.display = 'inline-block';
     }
 }
 
@@ -404,4 +437,18 @@ function startLoading() {
 function stopLoading() {
     usernameInput.disabled = false;
     loadingContainer.classList.remove('loading');
+}
+
+function rateLimitExceeded(headers) {
+    const rateLimit = headers.get('X-RateLimit-Remaining');
+    console.log(rateLimit);
+    return rateLimit && rateLimit <= 0;
+}
+function getRateLimitReason(headers) {
+    let reason = 'Your rate limit is exceeded. You have to login with GitHub to do another request.';
+    const rateLimitReset = headers.get('X-RateLimit-Reset');
+    if(rateLimitReset) {
+        reason = 'Your rate limit is exceeded. You have to wait till ' + moment.unix(rateLimitReset).format('DD.MM.YYYY HH:mm:ss') + ' to do another request.';
+    }
+    return reason;
 }
