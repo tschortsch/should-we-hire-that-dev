@@ -21,7 +21,8 @@ const starsValue = document.querySelector('#stars');
 const avatarWrapper = document.querySelector('#avatar-wrapper');
 const nameValue = document.querySelector('#name');
 const userLocationValue = document.querySelector('#location');
-const languagesContainer = document.querySelector('#languages');
+const languagesPieChartContainer = document.querySelector('#languages-pie-chart');
+let languagesPieChart = null;
 
 inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
@@ -220,22 +221,50 @@ function inspectFormSubmitHandler(e) {
                         console.log(languageStatisticsSorted);
                         console.log(totalLanguages);
 
+                        let languageStatisticsPieChartData = {
+                            labels: [],
+                            datasets: [
+                                {
+                                    data: [],
+                                    backgroundColor: [
+                                        "#FF6384",
+                                        "#36A2EB",
+                                        "#FFCE56",
+                                        "#96db89",
+                                        "#ff80b3",
+                                        "#9992ff",
+                                        "#a7e7ff"
+                                    ],
+                                    hoverBackgroundColor: [
+                                        "#FF6384",
+                                        "#36A2EB",
+                                        "#FFCE56",
+                                        "#96db89",
+                                        "#ff80b3",
+                                        "#9992ff",
+                                        "#a7e7ff"
+                                    ]
+                                }]
+                        };
                         languageStatisticsSorted.forEach((languagePercentage, language) => {
                             const languagePercentageRounded = round(languagePercentage);
-                            let languageElementProgress = document.createElement("DIV");
-                            languageElementProgress.innerHTML =
-                                '<div class="language-statistics">' +
-                                '<div>' + language + '</div>' +
-                                '<div class="progress">' +
-                                '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentageRounded + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentageRounded + '%</div>' +
-                                '</div>' +
-                                '</div>';
+                            languageStatisticsPieChartData.labels.push(language);
+                            languageStatisticsPieChartData.datasets[0].data.push(languagePercentageRounded);
+                        });
 
-                            languagesContainer.appendChild(languageElementProgress);
-                            const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
-                            setTimeout(() => {
-                                progressBar.style.width = languagePercentageRounded + '%';
-                            }, 1000);
+                        languagesPieChart = new Chart(languagesPieChartContainer,{
+                            type: 'pie',
+                            data: languageStatisticsPieChartData,
+                            options: {
+                                tooltips: {
+                                    callbacks: {
+                                        label: function(tooltipItem, data) {
+                                            const value = data.datasets[0].data[tooltipItem.index];
+                                            return data.labels[tooltipItem.index] + ': ' + value + '%';
+                                        }
+                                    }
+                                }
+                            }
                         });
 
                         resolve();
@@ -465,7 +494,9 @@ function clearValues() {
         container.innerText = '-';
     });
     avatarWrapper.innerHTML = '';
-    languagesContainer.innerHTML = '';
+    if(languagesPieChart) {
+        languagesPieChart.destroy();
+    }
     setError('');
 }
 function startLoading() {
