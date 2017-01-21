@@ -27,6 +27,7 @@
     "gulp-uglify": "^2.0.0"
   },
   "dependencies": {
+    "chart.js": "^2.4.0",
     "whatwg-fetch": "^2.0.1"
   }
 }
