@@ -193,8 +193,22 @@ function inspectFormSubmitHandler(e) {
                             });
                             return accumulator;
                         }, new Map());
+                        console.log(languageStatistics);
 
-                        const languageStatisticsSorted = new Map([...languageStatistics.entries()].sort((a, b) => {
+                        const languageStatisticsPercentage = [...languageStatistics.entries()].reduce((accumulator, language) => {
+                            const languagePercentage = getPercentage(language[1], totalLanguages);
+                            if(languagePercentage < 2) {
+                                let otherCount = accumulator.get('Other');
+                                otherCount += languagePercentage;
+                                accumulator.set('Other', otherCount);
+                            } else {
+                                accumulator.set(language[0], languagePercentage);
+                            }
+                            return accumulator;
+                        }, new Map([['Other', 0]]));
+                        console.log(languageStatisticsPercentage);
+
+                        const languageStatisticsSorted = new Map([...languageStatisticsPercentage.entries()].sort((a, b) => {
                             if(a[1] < b[1]) {
                                 return 1;
                             }
@@ -206,21 +220,21 @@ function inspectFormSubmitHandler(e) {
                         console.log(languageStatisticsSorted);
                         console.log(totalLanguages);
 
-                        languageStatisticsSorted.forEach((count, language) => {
+                        languageStatisticsSorted.forEach((languagePercentage, language) => {
+                            const languagePercentageRounded = round(languagePercentage);
                             let languageElementProgress = document.createElement("DIV");
-                            const languagePercentage = getPercentage(count, totalLanguages);
                             languageElementProgress.innerHTML =
                                 '<div class="language-statistics">' +
                                 '<div>' + language + '</div>' +
                                 '<div class="progress">' +
-                                '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentage + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentage + '%</div>' +
+                                '<div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%" aria-valuenow="' + languagePercentageRounded + '" aria-valuemin="0" aria-valuemax="100">' + languagePercentageRounded + '%</div>' +
                                 '</div>' +
                                 '</div>';
 
                             languagesContainer.appendChild(languageElementProgress);
                             const progressBar = languageElementProgress.children[0].children[1].children[0]; // it's like a kindergarten :/
                             setTimeout(() => {
-                                progressBar.style.width = languagePercentage + '%';
+                                progressBar.style.width = languagePercentageRounded + '%';
                             }, 1000);
                         });
 
@@ -262,7 +276,7 @@ function fetchRepoLanguages(repoUrl) {
 }
 
 function getPercentage(value, total) {
-    return Math.round(value *  100 / total);
+    return value *  100 / total;
 }
 
 function fetchCommits(username, page) {
@@ -275,6 +289,9 @@ function fetchCommits(username, page) {
             'Accept': 'application/vnd.github.cloak-preview'
         }
     });
+}
+function round(num) {
+    return Math.round(num * 10) / 10;
 }
 function fetchRepos(username) {
     let reposQueryUrl = 'https://api.github.com/users/' + username + '/repos';
