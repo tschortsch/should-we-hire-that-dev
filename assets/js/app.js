@@ -155,22 +155,41 @@ function inspectFormSubmitHandler(e) {
                     }, new Set());
 
                     let repoLanguagesPromises = [...languageUrlsUnique.values()].map((language_url) => { // Do request for each repo
-                        return new Promise((resolve) => {
-                            fetchRepoLanguages(language_url, resolve);
+                        return new Promise((resolve, reject) => {
+                            fetchRepoLanguages(language_url).then((repoLanguagesResponseRaw) => {
+                                if(rateLimitExceeded(repoLanguagesResponseRaw.headers)) {
+                                    reject(new Error(getRateLimitReason(repoLanguagesResponseRaw.headers)));
+                                }
+                                repoLanguagesResponseRaw.json().then((repoLanguages) => {
+                                    resolve(repoLanguages);
+                                });
+                            });
+                        }).catch(reason => {
+                            setError(reason);
+                            setState('login');
                         });
                     });
-                    Promise.all(repoLanguagesPromises).then((repoResponses) => {
+                    Promise.all(repoLanguagesPromises).then((repoLanguagesResponses) => {
+                        // if one promise value is undefined (when it gets rejected) stop gathering statistics value
+                        const allPromisesResolved = repoLanguagesResponses.reduce((accumulator, currentValue) => {
+                            return accumulator && currentValue;
+                        });
+                        if(!allPromisesResolved) {
+                            resolve();
+                            return;
+                        }
+
                         let totalLanguages = 0;
-                        const languageStatistics = repoResponses.reduce((accumulator, repo) => {
-                            Object.keys(repo).forEach(language => {
+                        const languageStatistics = repoLanguagesResponses.reduce((accumulator, repoLanguages) => {
+                            Object.keys(repoLanguages).forEach(language => {
                                 let count = accumulator.get(language);
                                 if(count) {
-                                    count += repo[language];
+                                    count += repoLanguages[language];
                                 } else {
-                                    count = repo[language];
+                                    count = repoLanguages[language];
                                 }
                                 accumulator.set(language, count);
-                                totalLanguages += repo[language];
+                                totalLanguages += repoLanguages[language];
                             });
                             return accumulator;
                         }, new Map());
@@ -212,6 +231,12 @@ function inspectFormSubmitHandler(e) {
 
             let reposStatisticsGathered = fetchRepos(username);
             reposStatisticsGathered.then(reposResponseRaw => {
+                if(rateLimitExceeded(reposResponseRaw.headers)) {
+                    setError(getRateLimitReason(reposResponseRaw.headers));
+                    setState('login');
+                    stopLoading();
+                    return;
+                }
                 reposResponseRaw.json().then(repos => {
                     let starsCount = 0;
                     repos.forEach(repo => {
@@ -229,15 +254,11 @@ function inspectFormSubmitHandler(e) {
     });
 }
 
-function fetchRepoLanguages(repoUrl, resolve) {
+function fetchRepoLanguages(repoUrl) {
     if(accessToken) {
         repoUrl += '?access_token=' + accessToken;
     }
-    fetch(repoUrl).then((repoResponseRaw) => {
-        repoResponseRaw.json().then((repo) => {
-            resolve(repo);
-        });
-    });
+    return fetch(repoUrl);
 }
 
 function getPercentage(value, total) {
