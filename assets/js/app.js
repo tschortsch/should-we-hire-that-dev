@@ -28,8 +28,8 @@ inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
 githubLogout.addEventListener('submit', removeAccessTokenFromLocalStorage);
 
-const statisticsContainers = [nameValue, userLocationValue, commitsValue, userSinceValue, userSinceFromNowValue, reposValue, starsValue];
-
+const statisticsContainers = [nameValue, userLocationValue, userSinceValue, userSinceFromNowValue];
+const statisticsContainersWithProgress = [followersValue, commitsValue, reposValue, starsValue];
 const judgementLimits = {
     'commits': new Map([
         [100, 10000],
@@ -105,6 +105,7 @@ function inspectFormSubmitHandler(e) {
     e.preventDefault();
     startLoading();
     clearValues();
+    clearValuesWithProgress();
     setState('userinfo');
 
     const username = usernameInput.value;
@@ -144,7 +145,7 @@ function inspectFormSubmitHandler(e) {
             const currentTimestamp = moment().unix();
             fillValue(userSinceValue, createdAtMoment.format('(DD.MM.YYYY)'));
             fillValue(userSinceFromNowValue, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
-            fillValue(reposValue, userResponse.public_repos);
+            fillValueWithProgress(reposValue, userResponse.public_repos);
 
             let avatarImg = document.createElement('img');
             avatarImg.src = userResponse.avatar_url;
@@ -179,7 +180,7 @@ function inspectFormSubmitHandler(e) {
                         return;
                     }
 
-                    fillValue(commitsValue, commitsResponses[0].total_count);
+                    fillValueWithProgress(commitsValue, commitsResponses[0].total_count);
 
                     let allCommitItems = [];
                     commitsResponses.forEach(commitsResponse => {
@@ -320,7 +321,7 @@ function inspectFormSubmitHandler(e) {
                     repos.forEach(repo => {
                         starsCount += repo.stargazers_count;
                     });
-                    fillValue(starsValue, starsCount);
+                    fillValueWithProgress(starsValue, starsCount);
                 });
             });
 
@@ -396,18 +397,6 @@ function fillValueWithProgress(container, value) {
     const valueContainer = container.querySelector('.value');
     const progressBar = container.querySelector('.progress-bar');
 
-    container.classList.remove(
-        'rank-10',
-        'rank-20',
-        'rank-30',
-        'rank-40',
-        'rank-50',
-        'rank-60',
-        'rank-70',
-        'rank-80',
-        'rank-90',
-        'rank-100'
-    );
     const judgement = getJudgement(container.id, value);
     if(judgement > 0) {
         container.classList.add('rank-' + judgement);
@@ -564,6 +553,27 @@ function setError(message) {
 function clearValues() {
     statisticsContainers.forEach((container) => {
         container.innerText = '-';
+    });
+}
+function clearValuesWithProgress() {
+    statisticsContainersWithProgress.forEach((container) => {
+        container.classList.remove(
+            'rank-10',
+            'rank-20',
+            'rank-30',
+            'rank-40',
+            'rank-50',
+            'rank-60',
+            'rank-70',
+            'rank-80',
+            'rank-90',
+            'rank-100'
+        );
+
+        container.querySelector('.value').innerText = '-';
+        const progressBar = container.querySelector('.progress-bar');
+        progressBar.style.width = '0%';
+        progressBar.setAttribute('aria-valuenow', '0');
     });
     avatarWrapper.innerHTML = '';
     if(languagesPieChart) {
