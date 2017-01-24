@@ -99,30 +99,33 @@ h3 {
         font-size: $font-size-base;
     }
 }
-.value-bad {
-    color: red;
+
+@function get-rank-color($rank) {
+    $step: 255 / 5;
+    $red: 0;
+    $green: 0;
+    @if $rank <= 50 {
+        $red: 255;
+        $green: ($rank / 10 * $step);
+    } @else {
+        $red: 255 - ((($rank - 50) / 10) * $step);
+        @if $red < 0 {
+            $red: 0
+        }
+        $green: 255;
+    }
+    @return rgb($red, $green, 0);
 }
-.value-ok {
-    color: orange;
-}
-.value-good {
-    color: green;
-}
-.value-ultra {
-    animation: rainbow 5s infinite;
-}
-@keyframes rainbow {
-    0% {color: #ff0000;}
-    10% {color: #ff8000;}
-    20% {color: #ffff00;}
-    30% {color: #80ff00;}
-    40% {color: #00ff00;}
-    50% {color: #00ff80;}
-    60% {color: #00ffff;}
-    70% {color: #0080ff;}
-    80% {color: #0000ff;}
-    90% {color: #8000ff;}
-    100% {color: #ff0080;}
+$rank-list: 10, 20, 30, 40, 50, 60, 70, 80, 90, 100;
+@each $rank in $rank-list {
+    .rank-#{$rank} {
+        .value {
+            color: get-rank-color($rank);
+        }
+        .progress-bar {
+            background-color: get-rank-color($rank);
+        }
+    }
 }
 
 $avatar-size: 150px;
