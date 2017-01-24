@@ -28,34 +28,69 @@ inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
 githubLogout.addEventListener('submit', removeAccessTokenFromLocalStorage);
 
-const statisticsContainers = [nameValue, userLocationValue, commitsValue, followersValue, userSinceValue, userSinceFromNowValue, reposValue, starsValue];
+const statisticsContainers = [nameValue, userLocationValue, commitsValue, userSinceValue, userSinceFromNowValue, reposValue, starsValue];
 
 const judgementLimits = {
-    'commits': {
-        ok: 1000,
-        good: 2000,
-        ultra: 8000
-    },
-    'followers': {
-        ok: 10,
-        good: 50,
-        ultra: 800
-    },
-    'repos': {
-        ok: 10,
-        good: 25,
-        ultra: 80
-    },
-    'stars': {
-        ok: 10,
-        good: 50,
-        ultra: 200
-    },
-    'user-since-from-now': {
-        ok: (365 * 24 * 60 * 60), // 1 year
-        good: 3 * (365 * 24 * 60 * 60), // 3 years
-        ultra: 6 * (365 * 24 * 60 * 60) // 6 years
-    }
+    'commits': new Map([
+        [100, 10000],
+        [90, 8000],
+        [80, 6000],
+        [70, 4000],
+        [60, 2000],
+        [50, 1000],
+        [40, 700],
+        [30, 500],
+        [20, 300],
+        [10, 100]
+    ]),
+    'followers': new Map([
+        [100, 1000],
+        [90, 600],
+        [80, 300],
+        [70, 150],
+        [60, 90],
+        [50, 50],
+        [40, 30],
+        [30, 20],
+        [20, 10],
+        [10, 5]
+    ]),
+    'repos': new Map([
+        [100, 100],
+        [90, 80],
+        [80, 60],
+        [70, 45],
+        [60, 35],
+        [50, 25],
+        [40, 20],
+        [30, 15],
+        [20, 10],
+        [10, 5]
+    ]),
+    'stars': new Map([
+        [100, 250],
+        [90, 200],
+        [80, 150],
+        [70, 100],
+        [60, 70],
+        [50, 50],
+        [40, 30],
+        [30, 20],
+        [20, 10],
+        [10, 5]
+    ]),
+    'user-since-from-now': new Map([
+        [100, 6 * (365 * 24 * 60 * 60)], // 6 years
+        [90, 5 * (365 * 24 * 60 * 60)],
+        [80, 4.5 * (365 * 24 * 60 * 60)],
+        [70, 4 * (365 * 24 * 60 * 60)],
+        [60, 3.5 * (365 * 24 * 60 * 60)],
+        [50, 3 * (365 * 24 * 60 * 60)],
+        [40, 2.5 * (365 * 24 * 60 * 60)],
+        [30, 2 * (365 * 24 * 60 * 60)],
+        [20, 1.5 * (365 * 24 * 60 * 60)],
+        [10, (365 * 24 * 60 * 60)]
+    ])
 };
 
 function githubAuthSubmitHandler(e) {
@@ -102,7 +137,7 @@ function inspectFormSubmitHandler(e) {
             console.log(userResponse);
             fillValue(nameValue, userResponse.name);
             fillValue(userLocationValue, userResponse.location);
-            fillValue(followersValue, userResponse.followers);
+            fillValueWithProgress(followersValue, userResponse.followers);
             const createdAt = new Date(userResponse.created_at);
             const createdAtMoment = moment(createdAt);
             const createdAtTimestamp = createdAtMoment.unix();
@@ -330,14 +365,25 @@ function fetchRepos(username) {
     return fetch(reposQueryUrl);
 }
 
-function fillValue(container, value, judgementValue) {
-    if(typeof judgementValue === 'undefined') {
-        judgementValue = value;
+function fillValue(container, value, rawValue) {
+    if(typeof rawValue === 'undefined') {
+        rawValue = value;
     }
-    container.classList.remove('value-ultra', 'value-good', 'value-ok', 'value-bad');
-    const judgement = getJudgement(container.id, judgementValue);
-    if(judgement) {
-        container.classList.add(judgement);
+    container.classList.remove(
+        'rank-10',
+        'rank-20',
+        'rank-30',
+        'rank-40',
+        'rank-50',
+        'rank-60',
+        'rank-70',
+        'rank-80',
+        'rank-90',
+        'rank-100'
+    );
+    const judgement = getJudgement(container.id, rawValue);
+    if(judgement > 0) {
+        container.classList.add('rank-' + judgement);
     }
     if(Number.isInteger(value)) {
         let valueAnimation = new CountUp(container, 0, value);
@@ -346,19 +392,45 @@ function fillValue(container, value, judgementValue) {
         container.innerText = value;
     }
 }
+function fillValueWithProgress(container, value) {
+    const valueContainer = container.querySelector('.value');
+    const progressBar = container.querySelector('.progress-bar');
+
+    container.classList.remove(
+        'rank-10',
+        'rank-20',
+        'rank-30',
+        'rank-40',
+        'rank-50',
+        'rank-60',
+        'rank-70',
+        'rank-80',
+        'rank-90',
+        'rank-100'
+    );
+    const judgement = getJudgement(container.id, value);
+    if(judgement > 0) {
+        container.classList.add('rank-' + judgement);
+    }
+    if(Number.isInteger(value)) {
+        let valueAnimation = new CountUp(valueContainer, 0, value);
+        valueAnimation.start();
+    } else {
+        valueContainer.innerText = value;
+    }
+    progressBar.style.width = judgement + '%';
+    progressBar.setAttribute('aria-valuenow', judgement);
+}
 
 function getJudgement(type, value) {
     if(judgementLimits.hasOwnProperty(type)) {
-        if(value >= judgementLimits[type].ultra) {
-            return 'value-ultra';
-        } else if(value >= judgementLimits[type].good) {
-            return 'value-good';
-        } else if(value >= judgementLimits[type].ok) {
-            return 'value-ok';
+        for(let [rank, limit] of judgementLimits[type]) {
+            if(value >= limit) {
+                return rank;
+            }
         }
-        return 'value-bad';
     }
-    return false;
+    return 0;
 }
 
 function checkIfUserExists(username) {
@@ -510,7 +582,6 @@ function stopLoading() {
 
 function rateLimitExceeded(headers) {
     const rateLimit = headers.get('X-RateLimit-Remaining');
-    console.log(rateLimit);
     return rateLimit && rateLimit <= 0;
 }
 function getRateLimitReason(headers) {
