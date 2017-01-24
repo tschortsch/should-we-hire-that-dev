@@ -116,7 +116,7 @@ h3 {
     }
     @return rgb($red, $green, 0);
 }
-$rank-list: 10, 20, 30, 40, 50, 60, 70, 80, 90, 100;
+$rank-list: 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100;
 @each $rank in $rank-list {
     .rank-#{$rank} {
         .value {
@@ -167,5 +167,6 @@ $avatar-border-size: 5px;
 }
 .progress-bar {
     width: 0;
+    background-color: red;
     transition: width 2s ease-out;
 }
