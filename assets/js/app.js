@@ -266,22 +266,22 @@ function inspectFormSubmitHandler(e) {
                                     {
                                         data: [],
                                         backgroundColor: [
-                                            "#FF6384",
-                                            "#36A2EB",
-                                            "#FFCE56",
-                                            "#96db89",
-                                            "#ff80b3",
-                                            "#9992ff",
-                                            "#a7e7ff"
+                                            '#FF6384',
+                                            '#36A2EB',
+                                            '#FFCE56',
+                                            '#96db89',
+                                            '#ff80b3',
+                                            '#9992ff',
+                                            '#a7e7ff'
                                         ],
                                         hoverBackgroundColor: [
-                                            "#FF6384",
-                                            "#36A2EB",
-                                            "#FFCE56",
-                                            "#96db89",
-                                            "#ff80b3",
-                                            "#9992ff",
-                                            "#a7e7ff"
+                                            '#FF6384',
+                                            '#36A2EB',
+                                            '#FFCE56',
+                                            '#96db89',
+                                            '#ff80b3',
+                                            '#9992ff',
+                                            '#a7e7ff'
                                         ]
                                     }]
                             };
@@ -471,7 +471,7 @@ function checkIfUserExists(username) {
  */
 let currentPlaceholderTimeout = null;
 
-usernameInput.addEventListener('focus', (e) => {
+usernameInput.addEventListener('focus', () => {
     if(currentPlaceholderTimeout !== null) {
         clearTimeout(currentPlaceholderTimeout);
     }
@@ -521,7 +521,6 @@ function type(text, resolve) {
     let textLength = text.length;
 
     if(textLength > 0) {
-        const currentPlaceholderText = usernameInput.placeholder;
         const nextCharacter = text.charAt(0);
         const remainingText = text.substr(1, textLength);
         usernameInput.placeholder += nextCharacter;
