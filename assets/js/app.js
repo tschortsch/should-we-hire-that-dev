@@ -11,13 +11,13 @@ setState('search');
 
 const loadingContainer = document.querySelector('#loading-container');
 const usernameInput = document.querySelector('#username');
-const commitsValue = document.querySelector('#commits');
 const errorValue = document.querySelector('#error');
-const followersValue = document.querySelector('#followers');
-const userSinceValue = document.querySelector('#user-since');
-const userSinceFromNowValue = document.querySelector('#user-since-from-now');
-const reposValue = document.querySelector('#repos');
-const starsValue = document.querySelector('#stars');
+const commitsContainer = document.querySelector('#commits');
+const followersContainer = document.querySelector('#followers');
+const userSinceContainer = document.querySelector('#user-since');
+const userSinceDateValue = document.querySelector('#user-since-date');
+const reposContainer = document.querySelector('#repos');
+const starsContainer = document.querySelector('#stars');
 const avatarWrapper = document.querySelector('#avatar-wrapper');
 const nameValue = document.querySelector('#name');
 const userLocationValue = document.querySelector('#location');
@@ -28,8 +28,7 @@ inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
 githubLogout.addEventListener('submit', removeAccessTokenFromLocalStorage);
 
-const statisticsContainers = [nameValue, userLocationValue, userSinceValue, userSinceFromNowValue];
-const statisticsContainersWithProgress = [followersValue, commitsValue, reposValue, starsValue];
+const statisticsContainers = [userSinceContainer, followersContainer, commitsContainer, reposContainer, starsContainer];
 const judgementLimits = {
     'commits': new Map([
         [100, 10000],
@@ -79,7 +78,7 @@ const judgementLimits = {
         [20, 10],
         [10, 5]
     ]),
-    'user-since-from-now': new Map([
+    'user-since': new Map([
         [100, 6 * (365 * 24 * 60 * 60)], // 6 years
         [90, 5 * (365 * 24 * 60 * 60)],
         [80, 4.5 * (365 * 24 * 60 * 60)],
@@ -105,7 +104,6 @@ function inspectFormSubmitHandler(e) {
     e.preventDefault();
     startLoading();
     clearValues();
-    clearValuesWithProgress();
     setState('userinfo');
 
     const username = usernameInput.value;
@@ -136,16 +134,16 @@ function inspectFormSubmitHandler(e) {
         }
         responseRaw.json().then((userResponse) => {
             console.log(userResponse);
-            fillValue(nameValue, userResponse.name);
-            fillValue(userLocationValue, userResponse.location);
-            fillValueWithProgress(followersValue, userResponse.followers);
+            nameValue.innerText = userResponse.name;
+            userLocationValue.innerText = userResponse.location;
+            fillStatisticsContainer(followersContainer, userResponse.followers);
             const createdAt = new Date(userResponse.created_at);
             const createdAtMoment = moment(createdAt);
             const createdAtTimestamp = createdAtMoment.unix();
             const currentTimestamp = moment().unix();
-            fillValue(userSinceValue, createdAtMoment.format('(DD.MM.YYYY)'));
-            fillValue(userSinceFromNowValue, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
-            fillValueWithProgress(reposValue, userResponse.public_repos);
+            userSinceDateValue.innerText = createdAtMoment.format('(DD.MM.YYYY)');
+            fillStatisticsContainer(userSinceContainer, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
+            fillStatisticsContainer(reposContainer, userResponse.public_repos);
 
             let avatarImg = document.createElement('img');
             avatarImg.src = userResponse.avatar_url;
@@ -180,7 +178,7 @@ function inspectFormSubmitHandler(e) {
                         return;
                     }
 
-                    fillValueWithProgress(commitsValue, commitsResponses[0].total_count);
+                    fillStatisticsContainer(commitsContainer, commitsResponses[0].total_count);
 
                     let allCommitItems = [];
                     commitsResponses.forEach(commitsResponse => {
@@ -321,7 +319,7 @@ function inspectFormSubmitHandler(e) {
                     repos.forEach(repo => {
                         starsCount += repo.stargazers_count;
                     });
-                    fillValueWithProgress(starsValue, starsCount);
+                    fillStatisticsContainer(starsContainer, starsCount);
                 });
             });
 
@@ -366,38 +364,14 @@ function fetchRepos(username) {
     return fetch(reposQueryUrl);
 }
 
-function fillValue(container, value, rawValue) {
+function fillStatisticsContainer(container, value, rawValue) {
     if(typeof rawValue === 'undefined') {
         rawValue = value;
     }
-    container.classList.remove(
-        'rank-10',
-        'rank-20',
-        'rank-30',
-        'rank-40',
-        'rank-50',
-        'rank-60',
-        'rank-70',
-        'rank-80',
-        'rank-90',
-        'rank-100'
-    );
-    const judgement = getJudgement(container.id, rawValue);
-    if(judgement > 0) {
-        container.classList.add('rank-' + judgement);
-    }
-    if(Number.isInteger(value)) {
-        let valueAnimation = new CountUp(container, 0, value);
-        valueAnimation.start();
-    } else {
-        container.innerText = value;
-    }
-}
-function fillValueWithProgress(container, value) {
     const valueContainer = container.querySelector('.value');
     const progressBar = container.querySelector('.progress-bar');
 
-    const judgement = getJudgement(container.id, value);
+    const judgement = getJudgement(container.id, rawValue);
     if(judgement > 0) {
         container.classList.add('rank-' + judgement);
     }
@@ -409,6 +383,36 @@ function fillValueWithProgress(container, value) {
     }
     progressBar.style.width = judgement + '%';
     progressBar.setAttribute('aria-valuenow', judgement);
+}
+
+function clearValues() {
+    statisticsContainers.forEach((container) => {
+        container.classList.remove(
+            'rank-10',
+            'rank-20',
+            'rank-30',
+            'rank-40',
+            'rank-50',
+            'rank-60',
+            'rank-70',
+            'rank-80',
+            'rank-90',
+            'rank-100'
+        );
+
+        container.querySelector('.value').innerText = '-';
+        const progressBar = container.querySelector('.progress-bar');
+        progressBar.style.width = '0%';
+        progressBar.setAttribute('aria-valuenow', '0');
+    });
+    avatarWrapper.innerHTML = '';
+    nameValue.innerText = '';
+    userLocationValue.innerText = '';
+    userSinceDateValue.innerText = '';
+    if(languagesPieChart) {
+        languagesPieChart.destroy();
+    }
+    setError('');
 }
 
 function getJudgement(type, value) {
@@ -550,37 +554,7 @@ function setState(state) {
 function setError(message) {
     errorValue.innerText = message;
 }
-function clearValues() {
-    statisticsContainers.forEach((container) => {
-        container.innerText = '-';
-    });
-}
-function clearValuesWithProgress() {
-    statisticsContainersWithProgress.forEach((container) => {
-        container.classList.remove(
-            'rank-10',
-            'rank-20',
-            'rank-30',
-            'rank-40',
-            'rank-50',
-            'rank-60',
-            'rank-70',
-            'rank-80',
-            'rank-90',
-            'rank-100'
-        );
 
-        container.querySelector('.value').innerText = '-';
-        const progressBar = container.querySelector('.progress-bar');
-        progressBar.style.width = '0%';
-        progressBar.setAttribute('aria-valuenow', '0');
-    });
-    avatarWrapper.innerHTML = '';
-    if(languagesPieChart) {
-        languagesPieChart.destroy();
-    }
-    setError('');
-}
 function startLoading() {
     usernameInput.disabled = true;
     loadingContainer.classList.add('loading');
