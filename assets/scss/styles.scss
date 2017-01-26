@@ -95,7 +95,7 @@ h3 {
         font-size: $font-size-h1;
         margin-bottom: 0;
     }
-    p#user-since {
+    p#user-since-date {
         font-size: $font-size-base;
     }
 }
@@ -119,9 +119,6 @@ h3 {
 $rank-list: 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100;
 @each $rank in $rank-list {
     .rank-#{$rank} {
-        .value {
-            color: get-rank-color($rank);
-        }
         .progress-bar {
             background-color: get-rank-color($rank);
         }
