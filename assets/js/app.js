@@ -23,6 +23,7 @@ const nameValue = document.querySelector('#name');
 const userLocationValue = document.querySelector('#location');
 const languagesPieChartContainer = document.querySelector('#languages-pie-chart');
 let languagesPieChart = null;
+let finalRanking = 0;
 
 inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
@@ -328,7 +329,10 @@ function inspectFormSubmitHandler(e) {
                 });
             });
 
-            Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(stopLoading);
+            Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(() => {
+                console.log('Final ranking: ' + finalRanking + ' of 500');
+                stopLoading();
+            });
         });
     }, (rejectedRaw) => {
         setError(rejectedRaw.statusText);
@@ -377,6 +381,7 @@ function fillStatisticsContainer(container, value, rawValue) {
     const progressBar = container.querySelector('.progress-bar');
 
     const judgement = getJudgement(container.id, rawValue);
+    finalRanking += judgement;
     if(judgement > 0) {
         container.classList.add('rank-' + judgement);
     }
@@ -422,7 +427,9 @@ function clearValues() {
     userSinceDateValue.innerText = '';
     if(languagesPieChart) {
         languagesPieChart.destroy();
+        languagesPieChart = null;
     }
+    finalRanking = 0;
     setError('');
 }
 
