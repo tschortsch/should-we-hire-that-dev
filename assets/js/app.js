@@ -21,15 +21,17 @@ const starsContainer = document.querySelector('#stars');
 const avatarWrapper = document.querySelector('#avatar-wrapper');
 const nameValue = document.querySelector('#name');
 const userLocationValue = document.querySelector('#location');
+const rankingContainer = document.querySelector('#ranking');
 const languagesPieChartContainer = document.querySelector('#languages-pie-chart');
 let languagesPieChart = null;
+let maxRanking = 0;
 let finalRanking = 0;
 
 inspectForm.addEventListener('submit', inspectFormSubmitHandler);
 githubAuthButton.addEventListener('click', githubAuthSubmitHandler);
 githubLogout.addEventListener('submit', removeAccessTokenFromLocalStorage);
 
-const statisticsContainers = [userSinceContainer, followersContainer, commitsContainer, reposContainer, starsContainer];
+const statisticsContainers = [userSinceContainer, followersContainer, commitsContainer, reposContainer, starsContainer, rankingContainer];
 const judgementLimits = {
     'commits': new Map([
         [100, 10000],
@@ -330,7 +332,7 @@ function inspectFormSubmitHandler(e) {
             });
 
             Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(() => {
-                console.log('Final ranking: ' + finalRanking + ' of 500');
+                fillRankingContainer(rankingContainer, finalRanking, maxRanking);
                 stopLoading();
             });
         });
@@ -381,6 +383,7 @@ function fillStatisticsContainer(container, value, rawValue) {
     const progressBar = container.querySelector('.progress-bar');
 
     const judgement = getJudgement(container.id, rawValue);
+    maxRanking += 100;
     finalRanking += judgement;
     if(judgement > 0) {
         container.classList.add('rank-' + judgement);
@@ -388,6 +391,16 @@ function fillStatisticsContainer(container, value, rawValue) {
     progressBar.style.width = judgement + '%';
     progressBar.setAttribute('aria-valuenow', judgement);
     fillValue(valueContainer, value);
+}
+function fillRankingContainer(container, value, maxValue) {
+    const rankPercentage = value * 100 / maxValue;
+    const rankClass = Math.round(rankPercentage / 10) * 10;
+    const valueContainer = container.querySelector('.value');
+    const progressBar = container.querySelector('.progress-bar');
+    container.classList.add('rank-' + rankClass);
+    progressBar.style.width = rankPercentage + '%';
+    progressBar.setAttribute('aria-valuenow', rankPercentage);
+    fillValue(valueContainer, value + ' / ' + maxValue);
 }
 function fillValue(container, value) {
     if(Number.isInteger(value)) {
@@ -430,6 +443,7 @@ function clearValues() {
         languagesPieChart = null;
     }
     finalRanking = 0;
+    maxRanking = 0;
     setError('');
 }
 
