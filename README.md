@@ -2,6 +2,10 @@
 
 [![Build Status](https://travis-ci.org/tschortsch/should-we-hire-that-dev.svg?branch=master)](https://travis-ci.org/tschortsch/should-we-hire-that-dev)
 
+A tool to analyize a given GitHub account.
+
+Try it out: https://shouldwehirethatdev.herokuapp.com
+
 ## Installation
 
 ### Heroku setup
