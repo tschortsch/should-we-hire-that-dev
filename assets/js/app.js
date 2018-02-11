@@ -21,6 +21,7 @@ const starsContainer = document.querySelector('#stars');
 const avatarWrapper = document.querySelector('#avatar-wrapper');
 const nameValue = document.querySelector('#name');
 const userLocationValue = document.querySelector('#location');
+const bioValue = document.querySelector('#bio');
 const rankingContainer = document.querySelector('#ranking');
 const languagesPieChartContainer = document.querySelector('#languages-pie-chart');
 let languagesPieChart = null;
@@ -110,7 +111,31 @@ function inspectFormSubmitHandler(e) {
     setState('userinfo');
 
     const username = usernameInput.value;
-    let userCheckPromise = checkIfUserExists(username);
+    const query = `
+    query {
+        user(login: "${username}") {
+            name,
+            location,
+            avatarUrl,
+            bio,
+            createdAt,
+            url,
+            followers {
+                totalCount
+            },
+            organizations {
+                totalCount
+            },
+            repositories {
+                totalCount
+            },
+            repositoriesContributedTo {
+                totalCount
+            },
+        }
+    }`;
+
+    let userCheckPromise = doGraphQlQuery(query);
 
     userCheckPromise.then((responseRaw) => {
         console.log(responseRaw);
@@ -137,22 +162,24 @@ function inspectFormSubmitHandler(e) {
         }
         responseRaw.json().then((userResponse) => {
             console.log(userResponse);
-            fillValue(nameValue, userResponse.name);
-            fillValue(userLocationValue, userResponse.location);
-            fillStatisticsContainer(followersContainer, userResponse.followers);
-            const createdAt = new Date(userResponse.created_at);
+            const userData = userResponse.data.user;
+            fillValue(nameValue, userData.name);
+            fillValue(userLocationValue, userData.location);
+            fillValue(bioValue, userData.bio);
+            fillStatisticsContainer(followersContainer, userData.followers.totalCount);
+            const createdAt = new Date(userData.createdAt);
             const createdAtMoment = moment(createdAt);
             const createdAtTimestamp = createdAtMoment.unix();
             const currentTimestamp = moment().unix();
             fillValue(userSinceDateValue, createdAtMoment.format('(DD.MM.YYYY)'));
             fillStatisticsContainer(userSinceContainer, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
-            fillStatisticsContainer(reposContainer, userResponse.public_repos);
+            fillStatisticsContainer(reposContainer, userData.repositories.totalCount);
 
             let avatarImg = document.createElement('img');
-            avatarImg.src = userResponse.avatar_url;
+            avatarImg.src = userData.avatarUrl;
             avatarWrapper.append(avatarImg);
 
-            let commitsStatisticsGatheredPromise = new Promise((resolve) => {
+            /*let commitsStatisticsGatheredPromise = new Promise((resolve) => {
                 let fetchCommitsPromises = [];
                 for(let page = 0; page < 5; page++) {
                     let fetchCommitsPromise = new Promise((resolve, reject) => {
@@ -334,11 +361,23 @@ function inspectFormSubmitHandler(e) {
             Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(() => {
                 fillRankingContainer(rankingContainer, overallRanking, maxRanking);
                 stopLoading();
-            });
+            });*/
+            stopLoading();
         });
     }, (rejectedRaw) => {
         setError(rejectedRaw.statusText);
         stopLoading();
+    });
+}
+
+function doGraphQlQuery(query) {
+    const ghGraphQlEndpointUrl = 'https://api.github.com/graphql';
+    return fetch(ghGraphQlEndpointUrl, {
+        method: 'POST',
+        body: JSON.stringify({query}),
+        headers: new Headers({
+            'Authorization': 'bearer ' + accessToken
+        })
     });
 }
 
@@ -435,9 +474,10 @@ function clearValues() {
         progressBar.setAttribute('aria-valuenow', '0');
     });
     avatarWrapper.innerHTML = '';
-    nameValue.innerText = '';
-    userLocationValue.innerText = '';
-    userSinceDateValue.innerText = '';
+    nameValue.innerText = '-';
+    userLocationValue.innerText = '-';
+    bioValue.innerText = '-';
+    userSinceDateValue.innerText = '-';
     if(languagesPieChart) {
         languagesPieChart.destroy();
         languagesPieChart = null;
