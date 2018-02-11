@@ -126,8 +126,13 @@ function inspectFormSubmitHandler(e) {
             organizations {
                 totalCount
             },
-            repositories {
-                totalCount
+            repositories(first: 100) {
+                totalCount,
+                nodes {
+                    stargazers {
+                        totalCount
+                    }
+                }
             },
             repositoriesContributedTo {
                 totalCount
@@ -174,6 +179,12 @@ function inspectFormSubmitHandler(e) {
             fillValue(userSinceDateValue, createdAtMoment.format('(DD.MM.YYYY)'));
             fillStatisticsContainer(userSinceContainer, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
             fillStatisticsContainer(reposContainer, userData.repositories.totalCount);
+
+            let starsCount = 0;
+            userData.repositories.nodes.forEach(repo => {
+                starsCount += repo.stargazers.totalCount;
+            });
+            fillStatisticsContainer(starsContainer, starsCount);
 
             let avatarImg = document.createElement('img');
             avatarImg.src = userData.avatarUrl;
@@ -338,23 +349,6 @@ function inspectFormSubmitHandler(e) {
                     } else {
                         resolve();
                     }
-                });
-            });
-
-            let reposStatisticsGathered = fetchRepos(username);
-            reposStatisticsGathered.then(reposResponseRaw => {
-                if(rateLimitExceeded(reposResponseRaw.headers)) {
-                    setError(getRateLimitReason(reposResponseRaw.headers));
-                    setState('login');
-                    stopLoading();
-                    return;
-                }
-                reposResponseRaw.json().then(repos => {
-                    let starsCount = 0;
-                    repos.forEach(repo => {
-                        starsCount += repo.stargazers_count;
-                    });
-                    fillStatisticsContainer(starsContainer, starsCount);
                 });
             });
 
