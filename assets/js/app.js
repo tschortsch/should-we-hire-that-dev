@@ -20,6 +20,7 @@ const reposContainer = document.querySelector('#repos');
 const starsContainer = document.querySelector('#stars');
 const avatarWrapper = document.querySelector('#avatar-wrapper');
 const nameValue = document.querySelector('#name');
+const urlValue = document.querySelector('#url');
 const userLocationValue = document.querySelector('#location');
 const bioValue = document.querySelector('#bio');
 const rankingContainer = document.querySelector('#ranking');
@@ -179,6 +180,7 @@ function inspectFormSubmitHandler(e) {
             console.log(userResponse);
             const userData = userResponse.data.user;
             fillValue(nameValue, userData.name);
+            urlValue.setAttribute('href', userData.url);
             fillValue(userLocationValue, userData.location);
             fillValue(bioValue, userData.bio);
             fillStatisticsContainer(followersContainer, userData.followers.totalCount);
