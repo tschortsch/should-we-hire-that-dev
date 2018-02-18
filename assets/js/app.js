@@ -289,42 +289,22 @@ function inspectFormSubmitHandler(e) {
             });
 
             // TODO replace with graphql query
-            let commitsStatisticsGatheredPromise = new Promise((resolve) => {
-                let fetchCommitsPromises = [];
-                for(let page = 0; page < 5; page++) {
-                    let fetchCommitsPromise = new Promise((resolve, reject) => {
-                        fetchCommits(username, page).then(commitsResponseRaw => {
-                            if(rateLimitExceeded(commitsResponseRaw.headers)) {
-                                reject(new Error(getRateLimitReason(commitsResponseRaw.headers)));
-                            }
-                            commitsResponseRaw.json().then(commitsResponse => {
-                                resolve(commitsResponse);
-                            });
-                        });
-                    }).catch(reason => {
-                        setError(reason);
-                        setState('login');
-                    });
-                    fetchCommitsPromises.push(fetchCommitsPromise);
-                }
-
-                Promise.all(fetchCommitsPromises).then(commitsResponses => {
-                    // if one promise value is undefined (when it gets rejected) stop gathering statistics value
-                    const allPromisesResolved = commitsResponses.reduce((accumulator, currentValue) => {
-                        return accumulator && currentValue;
-                    });
-                    if(!allPromisesResolved) {
-                        resolve();
-                        return;
+            let fetchCommitsPromise = new Promise((resolve, reject) => {
+                fetchCommits(username).then(commitsResponseRaw => {
+                    if(rateLimitExceeded(commitsResponseRaw.headers)) {
+                        reject(new Error(getRateLimitReason(commitsResponseRaw.headers)));
                     }
-
-                    fillStatisticsContainer(commitsContainer, commitsResponses[0].total_count);
-
-                    resolve();
+                    commitsResponseRaw.json().then(commitsResponse => {
+                        fillStatisticsContainer(commitsContainer, commitsResponse.total_count);
+                        resolve();
+                    });
                 });
+            }).catch(reason => {
+                setError(reason);
+                setState('login');
             });
 
-            commitsStatisticsGatheredPromise.then(() => {
+            fetchCommitsPromise.then(() => {
                 fillRankingContainer(rankingContainer, overallRanking, maxRanking);
                 stopLoading();
             });
@@ -351,7 +331,7 @@ function getPercentage(value, total) {
 }
 
 function fetchCommits(username, page) {
-    let commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=100&page=' + page;
+    let commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=1';
     if(accessToken) {
         commitQueryUrl += '&access_token=' + accessToken;
     }
