@@ -8,6 +8,6 @@ DIR=`dirname $0`
 echo "starting build..."
 
 echo "compiling assets"
-gulp deploy
+node_modules/.bin/gulp deploy
 
 echo "build finished!"
