@@ -20,7 +20,9 @@ const reposContainer = document.querySelector('#repos');
 const starsContainer = document.querySelector('#stars');
 const avatarWrapper = document.querySelector('#avatar-wrapper');
 const nameValue = document.querySelector('#name');
+const urlValue = document.querySelector('#url');
 const userLocationValue = document.querySelector('#location');
+const bioValue = document.querySelector('#bio');
 const rankingContainer = document.querySelector('#ranking');
 const languagesPieChartContainer = document.querySelector('#languages-pie-chart');
 let languagesPieChart = null;
@@ -110,7 +112,46 @@ function inspectFormSubmitHandler(e) {
     setState('userinfo');
 
     const username = usernameInput.value;
-    let userCheckPromise = checkIfUserExists(username);
+    const query = `
+    query {
+        user(login: "${username}") {
+            name,
+            location,
+            avatarUrl,
+            bio,
+            createdAt,
+            url,
+            followers {
+                totalCount
+            },
+            organizations {
+                totalCount
+            },
+            repositories(first: 100) {
+                totalCount,
+                nodes {
+                    stargazers {
+                        totalCount
+                    }
+                }
+            },
+            repositoriesContributedTo(first: 100) {
+                totalCount,
+                nodes {
+                    languages(first: 10) {
+                        edges {
+                            size,
+                            node {
+                                name
+                            }
+                        },
+                    }
+                }
+            },
+        }
+    }`;
+
+    let userCheckPromise = doGraphQlQuery(query);
 
     userCheckPromise.then((responseRaw) => {
         console.log(responseRaw);
@@ -137,201 +178,135 @@ function inspectFormSubmitHandler(e) {
         }
         responseRaw.json().then((userResponse) => {
             console.log(userResponse);
-            fillValue(nameValue, userResponse.name);
-            fillValue(userLocationValue, userResponse.location);
-            fillStatisticsContainer(followersContainer, userResponse.followers);
-            const createdAt = new Date(userResponse.created_at);
+            const userData = userResponse.data.user;
+            fillValue(nameValue, userData.name);
+            urlValue.setAttribute('href', userData.url);
+            fillValue(userLocationValue, userData.location);
+            fillValue(bioValue, userData.bio);
+            fillStatisticsContainer(followersContainer, userData.followers.totalCount);
+            const createdAt = new Date(userData.createdAt);
             const createdAtMoment = moment(createdAt);
             const createdAtTimestamp = createdAtMoment.unix();
             const currentTimestamp = moment().unix();
             fillValue(userSinceDateValue, createdAtMoment.format('(DD.MM.YYYY)'));
             fillStatisticsContainer(userSinceContainer, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
-            fillStatisticsContainer(reposContainer, userResponse.public_repos);
+            fillStatisticsContainer(reposContainer, userData.repositories.totalCount);
+
+            let starsCount = 0;
+            userData.repositories.nodes.forEach(repo => {
+                starsCount += repo.stargazers.totalCount;
+            });
+            fillStatisticsContainer(starsContainer, starsCount);
 
             let avatarImg = document.createElement('img');
-            avatarImg.src = userResponse.avatar_url;
+            avatarImg.src = userData.avatarUrl;
             avatarWrapper.append(avatarImg);
 
-            let commitsStatisticsGatheredPromise = new Promise((resolve) => {
-                let fetchCommitsPromises = [];
-                for(let page = 0; page < 5; page++) {
-                    let fetchCommitsPromise = new Promise((resolve, reject) => {
-                        fetchCommits(username, page).then(commitsResponseRaw => {
-                            if(rateLimitExceeded(commitsResponseRaw.headers)) {
-                                reject(new Error(getRateLimitReason(commitsResponseRaw.headers)));
-                            }
-                            commitsResponseRaw.json().then(commitsResponse => {
-                                resolve(commitsResponse);
-                            });
-                        });
-                    }).catch(reason => {
-                        setError(reason);
-                        setState('login');
-                    });
-                    fetchCommitsPromises.push(fetchCommitsPromise);
-                }
-
-                Promise.all(fetchCommitsPromises).then(commitsResponses => {
-                    // if one promise value is undefined (when it gets rejected) stop gathering statistics value
-                    const allPromisesResolved = commitsResponses.reduce((accumulator, currentValue) => {
-                        return accumulator && currentValue;
-                    });
-                    if(!allPromisesResolved) {
-                        resolve();
-                        return;
-                    }
-
-                    fillStatisticsContainer(commitsContainer, commitsResponses[0].total_count);
-
-                    let allCommitItems = [];
-                    commitsResponses.forEach(commitsResponse => {
-                        allCommitItems = allCommitItems.concat(commitsResponse.items);
-                    });
-
-                    // if user has more then 0 commits ;)
-                    if(allCommitItems.length > 0) {
-                        let languageUrlsUnique = allCommitItems.reduce((accumulator, commit) => {
-                            return accumulator.add(commit.repository.languages_url);
-                        }, new Set());
-
-                        let repoLanguagesPromises = [...languageUrlsUnique.values()].map((language_url) => { // Do request for each repo
-                            return new Promise((resolve, reject) => {
-                                fetchRepoLanguages(language_url).then((repoLanguagesResponseRaw) => {
-                                    if(rateLimitExceeded(repoLanguagesResponseRaw.headers)) {
-                                        reject(new Error(getRateLimitReason(repoLanguagesResponseRaw.headers)));
-                                    }
-                                    repoLanguagesResponseRaw.json().then((repoLanguages) => {
-                                        resolve(repoLanguages);
-                                    });
-                                });
-                            }).catch(reason => {
-                                setError(reason);
-                                setState('login');
-                            });
-                        });
-                        Promise.all(repoLanguagesPromises).then((repoLanguagesResponses) => {
-                            // if one promise value is undefined (when it gets rejected) stop gathering statistics value
-                            const allPromisesResolved = repoLanguagesResponses.reduce((accumulator, currentValue) => {
-                                return accumulator && currentValue;
-                            });
-                            if(!allPromisesResolved) {
-                                resolve();
-                                return;
-                            }
-
-                            let totalLanguages = 0;
-                            const languageStatistics = repoLanguagesResponses.reduce((accumulator, repoLanguages) => {
-                                Object.keys(repoLanguages).forEach(language => {
-                                    let count = accumulator.get(language);
-                                    if(count) {
-                                        count += repoLanguages[language];
-                                    } else {
-                                        count = repoLanguages[language];
-                                    }
-                                    accumulator.set(language, count);
-                                    totalLanguages += repoLanguages[language];
-                                });
-                                return accumulator;
-                            }, new Map());
-                            console.log(languageStatistics);
-
-                            const languageStatisticsPercentage = [...languageStatistics.entries()].reduce((accumulator, language) => {
-                                const languagePercentage = getPercentage(language[1], totalLanguages);
-                                if(languagePercentage < 2) {
-                                    let otherCount = accumulator.get('Other');
-                                    otherCount += languagePercentage;
-                                    accumulator.set('Other', otherCount);
-                                } else {
-                                    accumulator.set(language[0], languagePercentage);
-                                }
-                                return accumulator;
-                            }, new Map([['Other', 0]]));
-                            console.log(languageStatisticsPercentage);
-
-                            const languageStatisticsSorted = new Map([...languageStatisticsPercentage.entries()].sort((a, b) => {
-                                if(a[1] < b[1]) {
-                                    return 1;
-                                }
-                                if(a[1] > b[1]) {
-                                    return -1;
-                                }
-                                return 0;
-                            }));
-                            console.log(languageStatisticsSorted);
-                            console.log(totalLanguages);
-
-                            let languageStatisticsPieChartData = {
-                                labels: [],
-                                datasets: [
-                                    {
-                                        data: [],
-                                        backgroundColor: [
-                                            '#FF6384',
-                                            '#36A2EB',
-                                            '#FFCE56',
-                                            '#96db89',
-                                            '#ff80b3',
-                                            '#9992ff',
-                                            '#a7e7ff'
-                                        ],
-                                        hoverBackgroundColor: [
-                                            '#FF6384',
-                                            '#36A2EB',
-                                            '#FFCE56',
-                                            '#96db89',
-                                            '#ff80b3',
-                                            '#9992ff',
-                                            '#a7e7ff'
-                                        ]
-                                    }]
-                            };
-                            languageStatisticsSorted.forEach((languagePercentage, language) => {
-                                const languagePercentageRounded = round(languagePercentage);
-                                languageStatisticsPieChartData.labels.push(language);
-                                languageStatisticsPieChartData.datasets[0].data.push(languagePercentageRounded);
-                            });
-
-                            languagesPieChart = new Chart(languagesPieChartContainer,{
-                                type: 'pie',
-                                data: languageStatisticsPieChartData,
-                                options: {
-                                    tooltips: {
-                                        callbacks: {
-                                            label: function(tooltipItem, data) {
-                                                const value = data.datasets[0].data[tooltipItem.index];
-                                                return data.labels[tooltipItem.index] + ': ' + value + '%';
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-
-                            resolve();
-                        });
+            const userRepositoriesContributedTo = userData.repositoriesContributedTo.nodes;
+            let totalLanguages = 0;
+            const languageStatistics = userRepositoriesContributedTo.reduce((accumulator, repository) => {
+                repository.languages.edges.forEach(language => {
+                    let count = accumulator.get(language.node.name);
+                    if(count) {
+                        count += language.size;
                     } else {
-                        resolve();
+                        count = language.size;
                     }
+                    accumulator.set(language.node.name, count);
+                    totalLanguages += language.size;
                 });
-            });
+                return accumulator;
+            }, new Map());
+            console.log(languageStatistics);
 
-            let reposStatisticsGathered = fetchRepos(username);
-            reposStatisticsGathered.then(reposResponseRaw => {
-                if(rateLimitExceeded(reposResponseRaw.headers)) {
-                    setError(getRateLimitReason(reposResponseRaw.headers));
-                    setState('login');
-                    stopLoading();
-                    return;
+            const languageStatisticsPercentage = [...languageStatistics.entries()].reduce((accumulator, language) => {
+                const languagePercentage = getPercentage(language[1], totalLanguages);
+                if(languagePercentage < 2) {
+                    let otherCount = accumulator.get('Other');
+                    otherCount += languagePercentage;
+                    accumulator.set('Other', otherCount);
+                } else {
+                    accumulator.set(language[0], languagePercentage);
                 }
-                reposResponseRaw.json().then(repos => {
-                    let starsCount = 0;
-                    repos.forEach(repo => {
-                        starsCount += repo.stargazers_count;
-                    });
-                    fillStatisticsContainer(starsContainer, starsCount);
-                });
+                return accumulator;
+            }, new Map([['Other', 0]]));
+            console.log(languageStatisticsPercentage);
+
+            const languageStatisticsSorted = new Map([...languageStatisticsPercentage.entries()].sort((a, b) => {
+                if(a[1] < b[1]) {
+                    return 1;
+                }
+                if(a[1] > b[1]) {
+                    return -1;
+                }
+                return 0;
+            }));
+            console.log(languageStatisticsSorted);
+            console.log(totalLanguages);
+
+            let languageStatisticsPieChartData = {
+                labels: [],
+                datasets: [
+                    {
+                        data: [],
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#96db89',
+                            '#ff80b3',
+                            '#9992ff',
+                            '#a7e7ff'
+                        ],
+                        hoverBackgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#96db89',
+                            '#ff80b3',
+                            '#9992ff',
+                            '#a7e7ff'
+                        ]
+                    }]
+            };
+            languageStatisticsSorted.forEach((languagePercentage, language) => {
+                const languagePercentageRounded = round(languagePercentage);
+                languageStatisticsPieChartData.labels.push(language);
+                languageStatisticsPieChartData.datasets[0].data.push(languagePercentageRounded);
             });
 
-            Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(() => {
+            languagesPieChart = new Chart(languagesPieChartContainer,{
+                type: 'pie',
+                data: languageStatisticsPieChartData,
+                options: {
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                const value = data.datasets[0].data[tooltipItem.index];
+                                return data.labels[tooltipItem.index] + ': ' + value + '%';
+                            }
+                        }
+                    }
+                }
+            });
+
+            // TODO replace with graphql query
+            let fetchCommitsPromise = new Promise((resolve, reject) => {
+                fetchCommits(username).then(commitsResponseRaw => {
+                    if(rateLimitExceeded(commitsResponseRaw.headers)) {
+                        reject(new Error(getRateLimitReason(commitsResponseRaw.headers)));
+                    }
+                    commitsResponseRaw.json().then(commitsResponse => {
+                        fillStatisticsContainer(commitsContainer, commitsResponse.total_count);
+                        resolve();
+                    });
+                });
+            }).catch(reason => {
+                setError(reason);
+                setState('login');
+            });
+
+            fetchCommitsPromise.then(() => {
                 fillRankingContainer(rankingContainer, overallRanking, maxRanking);
                 stopLoading();
             });
@@ -342,19 +317,23 @@ function inspectFormSubmitHandler(e) {
     });
 }
 
-function fetchRepoLanguages(repoUrl) {
-    if(accessToken) {
-        repoUrl += '?access_token=' + accessToken;
-    }
-    return fetch(repoUrl);
+function doGraphQlQuery(query) {
+    const ghGraphQlEndpointUrl = 'https://api.github.com/graphql';
+    return fetch(ghGraphQlEndpointUrl, {
+        method: 'POST',
+        body: JSON.stringify({query}),
+        headers: new Headers({
+            'Authorization': 'bearer ' + accessToken
+        })
+    });
 }
 
 function getPercentage(value, total) {
     return value *  100 / total;
 }
 
-function fetchCommits(username, page) {
-    let commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=100&page=' + page;
+function fetchCommits(username) {
+    let commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=1';
     if(accessToken) {
         commitQueryUrl += '&access_token=' + accessToken;
     }
@@ -366,13 +345,6 @@ function fetchCommits(username, page) {
 }
 function round(num) {
     return Math.round(num * 10) / 10;
-}
-function fetchRepos(username) {
-    let reposQueryUrl = 'https://api.github.com/users/' + username + '/repos';
-    if(accessToken) {
-        reposQueryUrl += '?access_token=' + accessToken;
-    }
-    return fetch(reposQueryUrl);
 }
 
 function fillStatisticsContainer(container, value, rawValue) {
@@ -435,9 +407,10 @@ function clearValues() {
         progressBar.setAttribute('aria-valuenow', '0');
     });
     avatarWrapper.innerHTML = '';
-    nameValue.innerText = '';
-    userLocationValue.innerText = '';
-    userSinceDateValue.innerText = '';
+    nameValue.innerText = '-';
+    userLocationValue.innerText = '-';
+    bioValue.innerText = '-';
+    userSinceDateValue.innerText = '-';
     if(languagesPieChart) {
         languagesPieChart.destroy();
         languagesPieChart = null;
@@ -456,14 +429,6 @@ function getJudgement(type, value) {
         }
     }
     return 0;
-}
-
-function checkIfUserExists(username) {
-    let userQuery = 'https://api.github.com/users/' + username;
-    if(accessToken) {
-        userQuery += '?access_token=' + accessToken;
-    }
-    return fetch(userQuery);
 }
 
 /**
