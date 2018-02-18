@@ -346,13 +346,6 @@ function doGraphQlQuery(query) {
     });
 }
 
-function fetchRepoLanguages(repoUrl) {
-    if(accessToken) {
-        repoUrl += '?access_token=' + accessToken;
-    }
-    return fetch(repoUrl);
-}
-
 function getPercentage(value, total) {
     return value *  100 / total;
 }
@@ -370,13 +363,6 @@ function fetchCommits(username, page) {
 }
 function round(num) {
     return Math.round(num * 10) / 10;
-}
-function fetchRepos(username) {
-    let reposQueryUrl = 'https://api.github.com/users/' + username + '/repos';
-    if(accessToken) {
-        reposQueryUrl += '?access_token=' + accessToken;
-    }
-    return fetch(reposQueryUrl);
 }
 
 function fillStatisticsContainer(container, value, rawValue) {
@@ -461,14 +447,6 @@ function getJudgement(type, value) {
         }
     }
     return 0;
-}
-
-function checkIfUserExists(username) {
-    let userQuery = 'https://api.github.com/users/' + username;
-    if(accessToken) {
-        userQuery += '?access_token=' + accessToken;
-    }
-    return fetch(userQuery);
 }
 
 /**
