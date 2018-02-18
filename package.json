@@ -29,7 +29,9 @@
     "gulp-uglify": "^3.0.0"
   },
   "dependencies": {
-    "chart.js": "^2.4.0",
-    "whatwg-fetch": "^2.0.1"
+    "chart.js": "^2.7.1",
+    "countup.js": "^1.9.3",
+    "moment": "^2.20.1",
+    "whatwg-fetch": "^2.0.3"
   }
 }
