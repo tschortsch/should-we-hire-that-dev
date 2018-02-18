@@ -28,7 +28,7 @@ gulp.task('scripts', function () {
         .pipe(sourcemaps.init())
         .pipe(concat('app.min.js'))
         .pipe(babel({
-            presets: ['es2015']
+            presets: ['env']
         }))
         .pipe(uglify())
         .pipe(sourcemaps.write('.'))
