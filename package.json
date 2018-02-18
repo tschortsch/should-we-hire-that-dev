@@ -29,6 +29,7 @@
     "gulp-uglify": "^3.0.0"
   },
   "dependencies": {
+    "bootstrap": "^4.0.0",
     "chart.js": "^2.7.1",
     "countup.js": "^1.9.3",
     "moment": "^2.20.1",
