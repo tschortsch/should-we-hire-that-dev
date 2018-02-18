@@ -4,9 +4,3 @@
 [submodule "assets/external/Font-Awesome"]
 	path = assets/external/Font-Awesome
 	url = https://github.com/FortAwesome/Font-Awesome.git
-[submodule "assets/external/moment"]
-	path = assets/external/moment
-	url = https://github.com/moment/moment.git
-[submodule "assets/external/countUp.js"]
-	path = assets/external/countUp.js
-	url = https://github.com/inorganik/countUp.js.git
