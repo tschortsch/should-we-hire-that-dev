@@ -202,7 +202,7 @@ function inspectFormSubmitHandler(e) {
             avatarImg.src = userData.avatarUrl;
             avatarWrapper.append(avatarImg);
 
-            const userRepositoriesContributedTo = userData.repositoriesContributedTo.nodes
+            const userRepositoriesContributedTo = userData.repositoriesContributedTo.nodes;
             let totalLanguages = 0;
             const languageStatistics = userRepositoriesContributedTo.reduce((accumulator, repository) => {
                 repository.languages.edges.forEach(language => {
@@ -332,7 +332,7 @@ function getPercentage(value, total) {
     return value *  100 / total;
 }
 
-function fetchCommits(username, page) {
+function fetchCommits(username) {
     let commitQueryUrl = 'https://api.github.com/search/commits?q=author:' + username + '&sort=author-date&order=desc&per_page=1';
     if(accessToken) {
         commitQueryUrl += '&access_token=' + accessToken;
