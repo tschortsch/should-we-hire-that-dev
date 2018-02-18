@@ -134,8 +134,18 @@ function inspectFormSubmitHandler(e) {
                     }
                 }
             },
-            repositoriesContributedTo {
-                totalCount
+            repositoriesContributedTo(first: 100) {
+                totalCount,
+                nodes {
+                    languages(first: 10) {
+                        edges {
+                            size,
+                            node {
+                                name
+                            }
+                        },
+                    }
+                }
             },
         }
     }`;
@@ -190,7 +200,96 @@ function inspectFormSubmitHandler(e) {
             avatarImg.src = userData.avatarUrl;
             avatarWrapper.append(avatarImg);
 
-            /*let commitsStatisticsGatheredPromise = new Promise((resolve) => {
+            const userRepositoriesContributedTo = userData.repositoriesContributedTo.nodes
+            let totalLanguages = 0;
+            const languageStatistics = userRepositoriesContributedTo.reduce((accumulator, repository) => {
+                repository.languages.edges.forEach(language => {
+                    let count = accumulator.get(language.node.name);
+                    if(count) {
+                        count += language.size;
+                    } else {
+                        count = language.size;
+                    }
+                    accumulator.set(language.node.name, count);
+                    totalLanguages += language.size;
+                });
+                return accumulator;
+            }, new Map());
+            console.log(languageStatistics);
+
+            const languageStatisticsPercentage = [...languageStatistics.entries()].reduce((accumulator, language) => {
+                const languagePercentage = getPercentage(language[1], totalLanguages);
+                if(languagePercentage < 2) {
+                    let otherCount = accumulator.get('Other');
+                    otherCount += languagePercentage;
+                    accumulator.set('Other', otherCount);
+                } else {
+                    accumulator.set(language[0], languagePercentage);
+                }
+                return accumulator;
+            }, new Map([['Other', 0]]));
+            console.log(languageStatisticsPercentage);
+
+            const languageStatisticsSorted = new Map([...languageStatisticsPercentage.entries()].sort((a, b) => {
+                if(a[1] < b[1]) {
+                    return 1;
+                }
+                if(a[1] > b[1]) {
+                    return -1;
+                }
+                return 0;
+            }));
+            console.log(languageStatisticsSorted);
+            console.log(totalLanguages);
+
+            let languageStatisticsPieChartData = {
+                labels: [],
+                datasets: [
+                    {
+                        data: [],
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#96db89',
+                            '#ff80b3',
+                            '#9992ff',
+                            '#a7e7ff'
+                        ],
+                        hoverBackgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#96db89',
+                            '#ff80b3',
+                            '#9992ff',
+                            '#a7e7ff'
+                        ]
+                    }]
+            };
+            languageStatisticsSorted.forEach((languagePercentage, language) => {
+                const languagePercentageRounded = round(languagePercentage);
+                languageStatisticsPieChartData.labels.push(language);
+                languageStatisticsPieChartData.datasets[0].data.push(languagePercentageRounded);
+            });
+
+            languagesPieChart = new Chart(languagesPieChartContainer,{
+                type: 'pie',
+                data: languageStatisticsPieChartData,
+                options: {
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                const value = data.datasets[0].data[tooltipItem.index];
+                                return data.labels[tooltipItem.index] + ': ' + value + '%';
+                            }
+                        }
+                    }
+                }
+            });
+
+            // TODO replace with graphql query
+            let commitsStatisticsGatheredPromise = new Promise((resolve) => {
                 let fetchCommitsPromises = [];
                 for(let page = 0; page < 5; page++) {
                     let fetchCommitsPromise = new Promise((resolve, reject) => {
@@ -221,142 +320,14 @@ function inspectFormSubmitHandler(e) {
 
                     fillStatisticsContainer(commitsContainer, commitsResponses[0].total_count);
 
-                    let allCommitItems = [];
-                    commitsResponses.forEach(commitsResponse => {
-                        allCommitItems = allCommitItems.concat(commitsResponse.items);
-                    });
-
-                    // if user has more then 0 commits ;)
-                    if(allCommitItems.length > 0) {
-                        let languageUrlsUnique = allCommitItems.reduce((accumulator, commit) => {
-                            return accumulator.add(commit.repository.languages_url);
-                        }, new Set());
-
-                        let repoLanguagesPromises = [...languageUrlsUnique.values()].map((language_url) => { // Do request for each repo
-                            return new Promise((resolve, reject) => {
-                                fetchRepoLanguages(language_url).then((repoLanguagesResponseRaw) => {
-                                    if(rateLimitExceeded(repoLanguagesResponseRaw.headers)) {
-                                        reject(new Error(getRateLimitReason(repoLanguagesResponseRaw.headers)));
-                                    }
-                                    repoLanguagesResponseRaw.json().then((repoLanguages) => {
-                                        resolve(repoLanguages);
-                                    });
-                                });
-                            }).catch(reason => {
-                                setError(reason);
-                                setState('login');
-                            });
-                        });
-                        Promise.all(repoLanguagesPromises).then((repoLanguagesResponses) => {
-                            // if one promise value is undefined (when it gets rejected) stop gathering statistics value
-                            const allPromisesResolved = repoLanguagesResponses.reduce((accumulator, currentValue) => {
-                                return accumulator && currentValue;
-                            });
-                            if(!allPromisesResolved) {
-                                resolve();
-                                return;
-                            }
-
-                            let totalLanguages = 0;
-                            const languageStatistics = repoLanguagesResponses.reduce((accumulator, repoLanguages) => {
-                                Object.keys(repoLanguages).forEach(language => {
-                                    let count = accumulator.get(language);
-                                    if(count) {
-                                        count += repoLanguages[language];
-                                    } else {
-                                        count = repoLanguages[language];
-                                    }
-                                    accumulator.set(language, count);
-                                    totalLanguages += repoLanguages[language];
-                                });
-                                return accumulator;
-                            }, new Map());
-                            console.log(languageStatistics);
-
-                            const languageStatisticsPercentage = [...languageStatistics.entries()].reduce((accumulator, language) => {
-                                const languagePercentage = getPercentage(language[1], totalLanguages);
-                                if(languagePercentage < 2) {
-                                    let otherCount = accumulator.get('Other');
-                                    otherCount += languagePercentage;
-                                    accumulator.set('Other', otherCount);
-                                } else {
-                                    accumulator.set(language[0], languagePercentage);
-                                }
-                                return accumulator;
-                            }, new Map([['Other', 0]]));
-                            console.log(languageStatisticsPercentage);
-
-                            const languageStatisticsSorted = new Map([...languageStatisticsPercentage.entries()].sort((a, b) => {
-                                if(a[1] < b[1]) {
-                                    return 1;
-                                }
-                                if(a[1] > b[1]) {
-                                    return -1;
-                                }
-                                return 0;
-                            }));
-                            console.log(languageStatisticsSorted);
-                            console.log(totalLanguages);
-
-                            let languageStatisticsPieChartData = {
-                                labels: [],
-                                datasets: [
-                                    {
-                                        data: [],
-                                        backgroundColor: [
-                                            '#FF6384',
-                                            '#36A2EB',
-                                            '#FFCE56',
-                                            '#96db89',
-                                            '#ff80b3',
-                                            '#9992ff',
-                                            '#a7e7ff'
-                                        ],
-                                        hoverBackgroundColor: [
-                                            '#FF6384',
-                                            '#36A2EB',
-                                            '#FFCE56',
-                                            '#96db89',
-                                            '#ff80b3',
-                                            '#9992ff',
-                                            '#a7e7ff'
-                                        ]
-                                    }]
-                            };
-                            languageStatisticsSorted.forEach((languagePercentage, language) => {
-                                const languagePercentageRounded = round(languagePercentage);
-                                languageStatisticsPieChartData.labels.push(language);
-                                languageStatisticsPieChartData.datasets[0].data.push(languagePercentageRounded);
-                            });
-
-                            languagesPieChart = new Chart(languagesPieChartContainer,{
-                                type: 'pie',
-                                data: languageStatisticsPieChartData,
-                                options: {
-                                    tooltips: {
-                                        callbacks: {
-                                            label: function(tooltipItem, data) {
-                                                const value = data.datasets[0].data[tooltipItem.index];
-                                                return data.labels[tooltipItem.index] + ': ' + value + '%';
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-
-                            resolve();
-                        });
-                    } else {
-                        resolve();
-                    }
+                    resolve();
                 });
             });
 
-            Promise.all([commitsStatisticsGatheredPromise, reposStatisticsGathered]).then(() => {
+            commitsStatisticsGatheredPromise.then(() => {
                 fillRankingContainer(rankingContainer, overallRanking, maxRanking);
                 stopLoading();
-            });*/
-            stopLoading();
+            });
         });
     }, (rejectedRaw) => {
         setError(rejectedRaw.statusText);
