@@ -7,15 +7,18 @@
     <title>Should we hire that dev?</title>
 
     <link rel="stylesheet" href="assets/css/styles.css" />
+    <script defer src="assets/external/Font-Awesome/svg-with-js/js/fa-solid.min.js"></script>
+    <script defer src="assets/external/Font-Awesome/svg-with-js/js/fa-brands.min.js"></script>
+    <script defer src="assets/external/Font-Awesome/svg-with-js/js/fontawesome.min.js"></script>
 </head>
 <body>
 
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-12 text-right">
-            <button id="github-auth" class="btn btn-primary btn-sm">Authorize with GitHub <i class="fa fa-github" aria-hidden="true"></i></button>
+            <button id="github-auth" class="btn btn-primary btn-sm">Authorize with GitHub <i class="fab fa-github" aria-hidden="true"></i></button>
             <form id="github-logout">
-                <button class="btn btn-link btn-sm">Logout from GitHub <i class="fa fa-sign-out" aria-hidden="true"></i></button>
+                <button class="btn btn-link btn-sm">Logout from GitHub <i class="fas fa-sign-out-alt" aria-hidden="true"></i></button>
             </form>
         </div>
         <div class="col-12 text-center">
@@ -33,7 +36,7 @@
                                 <input type="search" name="username" id="username" class="form-control" placeholder="that dev" autocapitalize="off" />
                                 <div class="questionmark">?</div>
                             </div>
-                            <p class="form-text text-muted">Enter GitHub <i class="fa fa-github" aria-hidden="true"></i> username</p>
+                            <p class="form-text text-muted">Enter GitHub <i class="fab fa-github" aria-hidden="true"></i> username</p>
                         </div>
                     </div>
                 </div>
@@ -54,7 +57,7 @@
                     <div id="loading-container"></div>
                     <div id="avatar-wrapper"></div>
                     <h2><a href="#" id="url"><span id="name">-</span></a></h2>
-                    <p class="text-muted"><i class="fa fa-map-marker" aria-hidden="true"></i> <span id="location">-</span></p>
+                    <p class="text-muted"><i class="fas fa-map-marker-alt" aria-hidden="true"></i> <span id="location">-</span></p>
                     <p id="bio">-</p>
                 </div>
 
