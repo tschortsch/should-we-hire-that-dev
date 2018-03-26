@@ -21,6 +21,7 @@ const starsContainer = document.querySelector('#stars');
 const avatarWrapper = document.querySelector('#avatar-wrapper');
 const nameValue = document.querySelector('#name');
 const urlValue = document.querySelector('#url');
+const organizationsValue = document.querySelector('#organizations');
 const userLocationValue = document.querySelector('#location');
 const bioValue = document.querySelector('#bio');
 const rankingContainer = document.querySelector('#ranking');
@@ -124,8 +125,13 @@ function inspectFormSubmitHandler(e) {
             followers {
                 totalCount
             },
-            organizations {
-                totalCount
+            organizations(first: 100) {
+                totalCount,
+                nodes {
+                    name,
+                    url,
+                    avatarUrl
+                }
             },
             repositories(first: 100) {
                 totalCount,
@@ -191,6 +197,7 @@ function inspectFormSubmitHandler(e) {
             fillValue(userSinceDateValue, createdAtMoment.format('(DD.MM.YYYY)'));
             fillStatisticsContainer(userSinceContainer, createdAtMoment.fromNow(), currentTimestamp - createdAtTimestamp);
             fillStatisticsContainer(reposContainer, userData.repositories.totalCount);
+            fillValue(organizationsValue, getOrganizationsValue(userData.organizations.nodes), true);
 
             let starsCount = 0;
             userData.repositories.nodes.forEach(repo => {
@@ -347,6 +354,14 @@ function round(num) {
     return Math.round(num * 10) / 10;
 }
 
+function getOrganizationsValue(organizations) {
+    let organizationsValue = '';
+    organizations.forEach((organization) => {
+        organizationsValue += '<a href="' + organization.url + '"><img src="' + organization.avatarUrl + '" alt="' + organization.name + '" /></a>';
+    });
+    return organizationsValue;
+}
+
 function fillStatisticsContainer(container, value, rawValue) {
     if(typeof rawValue === 'undefined') {
         rawValue = value;
@@ -374,7 +389,7 @@ function fillRankingContainer(container, value, maxValue) {
     progressBar.setAttribute('aria-valuenow', rankPercentage);
     fillValue(valueContainer, value + ' / ' + maxValue);
 }
-function fillValue(container, value) {
+function fillValue(container, value, allowHtml) {
     if(Number.isInteger(value)) {
         let valueAnimation = new CountUp(container, 0, value);
         valueAnimation.start();
@@ -382,7 +397,11 @@ function fillValue(container, value) {
         if(!value || value === '') {
             value = '-';
         }
-        container.innerText = value;
+        if(allowHtml) {
+            container.innerHTML = value;
+        } else {
+            container.innerText = value;
+        }
     }
 }
 
